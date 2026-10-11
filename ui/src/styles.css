@@ -47,6 +47,8 @@ body {
 }
 
 .wordmark {
+  position: relative;
+  z-index: 2;
   padding: 20px 28px;
   font-size: 28px;
   font-weight: 800;
@@ -158,40 +160,35 @@ body {
   font-weight: 600;
 }
 
-/* Loading stand-in, replaced by the city in phase 4. */
+/* City: the 3D scene fills the screen, with the status text floating above the rooftops. */
 
-.status {
-  flex: 1;
-  width: min(760px, 100% - 32px);
-  margin: 0 auto;
-  padding: 8vh 0;
+.city-screen {
+  position: fixed;
+  inset: 0;
 }
 
-.status-title {
+.city-overlay {
+  position: absolute;
+  top: 72px;
+  left: 0;
+  right: 0;
+  padding: 0 16px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.city-title {
   margin: 0;
-  font-size: clamp(32px, 5vw, 48px);
+  font-size: clamp(30px, 4.5vw, 46px);
   font-weight: 800;
   line-height: 1.1;
 }
 
-.status-seed {
-  margin: 8px 0 0;
-  font-size: 22px;
-  font-weight: 600;
-}
-
-.status-count {
-  margin: 24px 0 8px;
+.city-subtitle {
+  margin: 6px 0 0;
   color: var(--asphalt-soft);
-  font-size: 18px;
-}
-
-.status-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 18px;
-  line-height: 1.8;
+  font-size: 19px;
+  font-weight: 600;
 }
 
 @media (max-width: 560px) {
