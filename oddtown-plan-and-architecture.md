@@ -409,6 +409,18 @@ If we run out of time, we cut in this order.
 
 We never cut gossip, branches, lifespans, replacements or replay.
 
+## Future possible additions
+
+These are ideas we won't build in the 12 hours. We keep them here in case we finish early or keep working on Oddtown afterward.
+
+### Diversity index
+
+A diversity index would measure how different the living characters are from each other, and let us turn the town's diversity up or down on purpose. The simplest version is the average trait distance between every pair of living characters. It needs no embeddings, because refiners already compute trait distances.
+
+The index would be a setting chosen at the start of a run, and it would steer replacements. To induce diversity, designers push each newcomer away from the town harder whenever the index drops. To reduce diversity, designers make newcomers that fit in with the town, so factions settle and the town drifts toward agreement.
+
+Running the same seed both ways would show whether a more diverse town really produces more creative ideas, or whether some agreement helps ideas mature.
+
 ## Open questions
 
 - [x] Who is on the team? Clara on platform, Anthony on the agent brain, Oleg on observer and UI, split as in [team-split.md](team-split.md).
