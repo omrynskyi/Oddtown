@@ -105,7 +105,7 @@ Needs from you: a look at the Ask screen's styling, if you care how it looks yet
 ### Phase 4, city and loading
 
 Build:
-- The isometric city: an orthographic camera, ground and roads from KayKit, and six lots. Each character gets a KayKit building chosen from its id, so the same character always gets the same building.
+- The isometric city: an orthographic camera, ground and roads from KayKit, and six lots. Every run gets its own town, a compact block with rounded corners, seeded by the run id so a refresh shows the same town. Buildings always face the camera and front onto a road, and no building hides another. The six neighbors get six different buildings, shuffled per run.
 - "Loading your city" text. Each `agent.born` pops its building up with a bounce and a burst of dust particles.
 
 Done when:
