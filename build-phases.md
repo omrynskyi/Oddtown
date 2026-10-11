@@ -156,6 +156,8 @@ Done when: a real run plays through every screen from Ask to the tree.
 
 ## After phase 8
 
+Phases 9 to 11, which show agreement and disagreement between characters and find groups, are in [interaction-plan.md](interaction-plan.md).
+
 These are in [ui-plan.md](ui-plan.md) as not decided yet. Each can become its own phase once you decide what it looks like:
 
 - What deaths and replacements look like in the city.

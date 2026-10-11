@@ -61,12 +61,24 @@ body {
 
 .ask {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  width: min(760px, 100% - 32px);
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+  width: calc(100% - 32px);
   margin: 0 auto;
-  padding-bottom: 12vh;
+  /* Let the recent-town list finish flush with the viewport edge. */
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+.ask-main {
+  align-self: end;
+  width: min(760px, 100%);
+  margin: 0 auto 8px;
+}
+
+.recent-runs-dock {
+  align-self: end;
 }
 
 .ask-bubble {
@@ -162,6 +174,240 @@ body {
   font-weight: 600;
 }
 
+.ask-feedback {
+  margin: 36px 0 0 28px;
+}
+
+.ask-feedback .ask-error {
+  margin: 0 0 8px;
+}
+
+.text-button,
+.run-link,
+.refresh-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--asphalt);
+  font: 700 17px / 1.3 var(--font);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.run-link {
+  margin: 0 0 12px 28px;
+  color: var(--asphalt-soft);
+  font-size: 16px;
+}
+
+.text-button:focus-visible,
+.refresh-button:focus-visible,
+.close-button:focus-visible,
+.stop-button:focus-visible {
+  outline: 3px solid var(--taxi);
+  outline-offset: 3px;
+}
+
+.run-inspector {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  height: clamp(272px, 52dvh, 380px);
+  padding: 0;
+}
+
+.run-inspector-header {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  width: min(440px, 100%);
+  margin: 0 auto 10px;
+  padding: 4px 0 10px;
+  background: var(--sky);
+}
+
+.run-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.run-inspector h2 {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.close-button {
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--asphalt);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--asphalt);
+  font: 700 24px / 1 var(--font);
+  cursor: pointer;
+}
+
+.run-stack {
+  position: relative;
+  grid-row: 2;
+  width: min(440px, 100%);
+  height: 100%;
+  margin-inline: auto;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: none;
+  cursor: grab;
+  isolation: isolate;
+}
+
+.run-stack:active {
+  cursor: grabbing;
+}
+
+.run-stack:focus-visible {
+  outline: 3px solid rgb(63 69 76 / 0.24);
+  outline-offset: 4px;
+}
+
+.run-stack::before {
+  content: "";
+  position: absolute;
+  z-index: 110;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 92px;
+  background: linear-gradient(to bottom, var(--sky) 0, rgb(143 207 234 / 0.72) 30%, transparent 100%);
+  pointer-events: none;
+}
+
+.run-stack-card {
+  position: absolute;
+  top: 0;
+  right: 4px;
+  left: 4px;
+  height: 62px;
+  transform-origin: 50% 0;
+  will-change: transform, opacity, filter;
+}
+
+.run-row {
+  display: flex;
+  width: 100%;
+  height: 62px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  background: var(--kerb);
+  border: var(--outline);
+  border-radius: 22px;
+  box-shadow: var(--lift);
+  transform-origin: 50% 100%;
+  animation: recent-town-arrive 540ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes recent-town-arrive {
+  from {
+    transform: translateY(24px) rotate(0.7deg) scale(0.975);
+    box-shadow: 0 2px 0 var(--asphalt);
+  }
+
+  to {
+    transform: translateY(0) rotate(0) scale(1);
+    box-shadow: var(--lift);
+  }
+}
+
+.run-inspector > .run-muted,
+.run-inspector > .run-error {
+  position: absolute;
+  z-index: 30;
+  top: 56px;
+  left: 50%;
+  width: min(440px, 100%);
+  transform: translateX(-50%);
+}
+
+.run-row-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.run-row-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-row-copy span { overflow: hidden; font-size: 14px; }
+
+.run-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.view-run-button {
+  padding: 7px 10px;
+  border: 2px solid var(--asphalt);
+  border-radius: 12px;
+  background: var(--taxi);
+  color: var(--asphalt);
+  font: 800 14px / 1 var(--font);
+  box-shadow: 0 3px 0 var(--asphalt);
+  cursor: pointer;
+}
+
+.stop-button {
+  flex: none;
+  padding: 8px 12px;
+  border: 2px solid var(--brick);
+  border-radius: 12px;
+  background: #fff1ee;
+  color: var(--brick);
+  font: 800 15px / 1 var(--font);
+  cursor: pointer;
+}
+
+.stop-button:active:not(:disabled) { transform: translateY(2px); }
+.stop-button:disabled, .view-run-button:disabled, .refresh-button:disabled { cursor: default; opacity: .55; }
+.run-muted { margin: 0; color: var(--asphalt-soft); font-size: 17px; }
+.run-error { margin: 14px 0; color: var(--brick); font-weight: 700; }
+.refresh-button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
+  border: 2px solid var(--asphalt);
+  border-radius: 50%;
+  align-items: center;
+  text-decoration: none;
+}
+
+.refresh-icon {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 /* City: the 3D scene fills the screen, with the status text floating above the rooftops. */
 
 .city-screen {
@@ -202,60 +448,267 @@ body {
   font-weight: 600;
 }
 
-/* Speech bubbles above the houses, in the same shape as the Ask screen's bubble. */
+/* A clicked house opens this compact resident inspector beside its roof. */
+.house-inspector {
+  position: relative;
+  width: 300px;
+  max-height: 330px;
+  overflow-y: auto;
+  padding: 14px 16px 15px;
+  background: var(--kerb);
+  border: var(--outline);
+  border-radius: 18px;
+  box-shadow: 0 5px 0 var(--asphalt);
+  color: var(--asphalt);
+  transform: translate(22px, -25%);
+  transform-origin: 0 50%;
+  animation: house-inspector-in 160ms ease-out both;
+  scrollbar-width: thin;
+  scrollbar-color: var(--asphalt-soft) transparent;
+}
 
-.bubble {
+.house-inspector::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: -12px;
+  width: 18px;
+  height: 18px;
+  background: var(--kerb);
+  border-bottom: var(--outline);
+  border-left: var(--outline);
+  transform: rotate(45deg);
+}
+
+.house-inspector h2,
+.house-inspector-line,
+.house-inspector-details,
+.house-inspector-worldview,
+.house-inspector-loves,
+.house-message-group,
+.house-inspector-thought,
+.house-inspector-close {
+  position: relative;
+  z-index: 1;
+}
+
+.house-inspector h2 {
+  margin: 0;
+  padding-right: 30px;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.house-inspector-line {
+  margin: 3px 0 10px;
+  color: var(--asphalt-soft);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.house-inspector-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin: 0;
+}
+
+.house-inspector-details div {
+  min-width: 0;
+}
+
+.house-inspector-details dt {
+  color: var(--asphalt-soft);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.house-inspector-details dd {
+  margin: 2px 0 0;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.house-inspector-worldview,
+.house-inspector-loves,
+.house-inspector-thought {
+  margin: 11px 0 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.house-inspector-worldview {
+  padding-left: 9px;
+  border-left: 3px solid var(--taxi);
+}
+
+.house-inspector-loves {
+  color: var(--asphalt-soft);
+}
+
+.house-inspector-thought {
+  padding-top: 10px;
+  border-top: 2px solid rgb(63 69 76 / 0.16);
+}
+
+.house-inspector-thought strong {
+  display: block;
+  margin-bottom: 2px;
+  color: var(--asphalt-soft);
+  font-size: 11px;
+  text-transform: uppercase;
+}
+
+.house-message-group {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 2px solid rgb(63 69 76 / 0.16);
+}
+
+.house-message-group h3 {
+  margin: 0 0 6px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.house-message-group ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.house-message-group li {
+  padding: 7px 8px;
+  background: rgb(63 69 76 / 0.07);
+  border-radius: 10px;
+}
+
+.house-message-group li span {
+  display: block;
+  color: var(--asphalt-soft);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.house-message-group li p,
+.house-message-empty {
+  margin: 1px 0 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.house-message-empty {
+  color: var(--asphalt-soft);
+}
+
+.house-inspector-close {
+  position: absolute;
+  top: 9px;
+  right: 9px;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 2px solid var(--asphalt);
+  border-radius: 50%;
+  background: var(--kerb);
+  color: var(--asphalt);
+  font: 800 20px / 1 var(--font);
+  cursor: pointer;
+}
+
+.house-inspector-close:active {
+  transform: translateY(2px);
+}
+
+.house-inspector-close:focus-visible {
+  outline: 3px solid var(--taxi);
+  outline-offset: 2px;
+}
+
+@keyframes house-inspector-in {
+  from {
+    opacity: 0;
+    transform: translate(14px, -25%) scale(.96);
+  }
+}
+
+/* Cards over the houses: what a character says, and the letters sent to it, in the Ask screen's bubble shape. */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  /* Newest card at the bottom, just above the roof. */
+  transform: translate(-50%, -100%);
+}
+
+.house-card {
   position: relative;
   width: max-content;
   max-width: 190px;
   padding: 7px 12px 8px;
   background: var(--kerb);
-  border: 2.5px solid var(--asphalt);
+  border: 2.5px solid var(--edge);
   border-radius: 14px;
-  box-shadow: 0 3px 0 var(--asphalt);
+  box-shadow: 0 3px 0 var(--edge);
   color: var(--asphalt);
   font: 600 14px / 1.25 var(--font);
-  /* Sits above its anchor point on the roof, with the tail pointing down at it. */
-  transform: translate(-50%, calc(-100% - 12px));
-  transform-origin: 50% 100%;
-  animation: bubble-life 5s ease-out forwards;
+  animation: card-say 5s ease-out forwards;
+  --edge: var(--asphalt);
 }
 
-.bubble::after {
-  content: "";
-  position: absolute;
-  left: calc(50% - 7px);
-  bottom: -9px;
-  width: 12px;
-  height: 12px;
-  background: var(--kerb);
-  border-right: 2.5px solid var(--asphalt);
-  border-bottom: 2.5px solid var(--asphalt);
-  transform: rotate(45deg);
-}
-
-.bubble-speaker {
+.house-card .card-from {
   display: block;
   color: var(--asphalt-soft);
   font-size: 12px;
   font-weight: 700;
 }
 
+.house-card .card-stamp {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.letter-agree .card-stamp {
+  color: #3f8f55;
+}
+
+.letter-disagree .card-stamp {
+  color: var(--brick);
+}
+
+.letter-mixed .card-stamp {
+  color: #c98a12;
+}
+
 /* Last words get the darker treatment, since that character is about to go. */
-.bubble-last {
+.house-card-last {
   background: var(--asphalt);
   color: var(--kerb);
 }
 
-.bubble-last::after {
-  background: var(--asphalt);
-}
-
-.bubble-last .bubble-speaker {
+.house-card-last .card-from {
   color: var(--taxi);
 }
 
-@keyframes bubble-life {
+/* A character's own words just pop in. */
+@keyframes card-say {
   0% {
     opacity: 0;
     scale: 0.6;
@@ -272,6 +725,211 @@ body {
   }
   100% {
     opacity: 0;
+  }
+}
+
+/* A letter is one element for its whole life: an envelope that flies from the sender's roof,
+   opens its flap and unfolds into the card. Its size and distance to travel are set by the
+   script (--sx and --sy squash it to envelope size, --dx and --dy are where it starts from). */
+
+.letter {
+  position: relative;
+  width: max-content;
+  max-width: 190px;
+  padding: 7px 12px 8px;
+  color: var(--asphalt);
+  font: 600 14px / 1.25 var(--font);
+  visibility: hidden;
+  --edge: var(--asphalt);
+}
+
+/* A shared acceptance triggers this at both roofs in the same event render. */
+.agreement-badge {
+  position: absolute;
+  z-index: 2;
+  right: -24px;
+  bottom: 2px;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  background: #fdf0c6;
+  border: 2.5px solid #3f8f55;
+  border-radius: 50%;
+  box-shadow: 0 3px 0 #3f8f55;
+  animation: agreement-pop 4.8s ease-out both;
+}
+
+.agreement-badge svg {
+  width: 22px;
+  height: 22px;
+  fill: #3f8f55;
+}
+
+@keyframes agreement-pop {
+  0% { opacity: 0; scale: 0.35; translate: 0 18px; }
+  12% { opacity: 1; scale: 1.14; translate: 0 -6px; }
+  20%, 78% { opacity: 1; scale: 1; translate: 0 0; }
+  100% { opacity: 0; scale: 0.85; translate: 0 -14px; }
+}
+
+.letter-agree {
+  --edge: #3f8f55;
+}
+
+.letter-disagree {
+  --edge: var(--brick);
+}
+
+.letter-mixed {
+  --edge: #c98a12;
+}
+
+.letter-go {
+  visibility: visible;
+  animation:
+    letter-fly 1.1s linear both,
+    letter-tilt 1.1s ease-out both,
+    letter-life 7s linear both;
+}
+
+.letter-body,
+.letter-decor {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.letter-body {
+  filter: drop-shadow(0 3px 0 var(--edge));
+}
+
+.letter-body rect {
+  fill: var(--kerb);
+  stroke: var(--edge);
+  stroke-width: 2.5px;
+  vector-effect: non-scaling-stroke;
+}
+
+.letter-decor {
+  animation: letter-decor 7s linear both;
+}
+
+.letter-seam,
+.letter-flap {
+  stroke: var(--asphalt);
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.letter-seam {
+  fill: none;
+  opacity: 0.45;
+}
+
+.letter-flap {
+  fill: var(--taxi);
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  animation: letter-flap 7s ease-out both;
+}
+
+.letter-text {
+  position: relative;
+  animation: letter-text 7s linear both;
+}
+
+/* The flight is a hop along an arc, from where the sender's roof is on screen to the letter's place. */
+@keyframes letter-fly {
+  0% {
+    translate: var(--dx) var(--dy);
+  }
+  25% {
+    translate: calc(var(--dx) * 0.75) calc(var(--dy) * 0.75 - 52px);
+  }
+  50% {
+    translate: calc(var(--dx) * 0.5) calc(var(--dy) * 0.5 - 70px);
+  }
+  75% {
+    translate: calc(var(--dx) * 0.25) calc(var(--dy) * 0.25 - 52px);
+  }
+  100% {
+    translate: 0 0;
+  }
+}
+
+@keyframes letter-tilt {
+  0% {
+    rotate: -20deg;
+  }
+  60% {
+    rotate: 12deg;
+  }
+  100% {
+    rotate: 0deg;
+  }
+}
+
+/* Envelope until it lands (1.1s of the 7), then it spreads wide, drops open, holds and fades. */
+@keyframes letter-life {
+  0%,
+  19% {
+    scale: var(--sx) var(--sy);
+    opacity: 1;
+  }
+  27% {
+    scale: 1 var(--sy);
+  }
+  34% {
+    scale: 1.02 1.05;
+  }
+  37%,
+  91% {
+    scale: 1 1;
+    opacity: 1;
+  }
+  100% {
+    scale: 1 1;
+    opacity: 0;
+  }
+}
+
+/* The flap swings up off the envelope as it lands. */
+@keyframes letter-flap {
+  0%,
+  14% {
+    transform: scaleY(1);
+  }
+  19%,
+  100% {
+    transform: scaleY(-1);
+  }
+}
+
+/* The envelope's markings give way to the card. */
+@keyframes letter-decor {
+  0%,
+  24% {
+    opacity: 1;
+  }
+  32%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes letter-text {
+  0%,
+  30% {
+    opacity: 0;
+  }
+  38%,
+  100% {
+    opacity: 1;
   }
 }
 
@@ -457,12 +1115,28 @@ body {
   cursor: pointer;
 }
 
+.home-tab {
+  padding: 6px 14px;
+  border: 0;
+  border-right: 2px solid rgb(63 69 76 / 0.2);
+  border-radius: 999px 0 0 999px;
+  background: transparent;
+  color: var(--asphalt);
+  font: 800 17px / 1.2 var(--font);
+  cursor: pointer;
+}
+
 .tab[aria-pressed="true"] {
   background: var(--taxi);
   color: var(--asphalt);
 }
 
-.tab:focus-visible {
+.tab:focus-visible,
+.home-tab:focus-visible,
+.tree-node-expand:focus-visible,
+.tree-detail-close:focus-visible,
+.view-run-button:focus-visible,
+.playback-slider:focus-visible {
   outline: 3px solid var(--asphalt);
   outline-offset: 1px;
 }
@@ -514,6 +1188,8 @@ body {
 
 .tree-node {
   position: absolute;
+  display: flex;
+  flex-direction: column;
   padding: 8px 12px;
   overflow: hidden;
   background: var(--kerb);
@@ -566,19 +1242,182 @@ body {
 }
 
 .tree-node-text {
-  display: -webkit-box;
-  margin: 0;
-  overflow: hidden;
+  flex: 1;
+  margin: 0 -4px 6px 0;
+  padding-right: 4px;
+  overflow: auto;
   font-size: 14px;
   font-weight: 600;
   line-height: 1.3;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  scrollbar-width: thin;
+  scrollbar-color: var(--asphalt-soft) transparent;
+}
+
+.tree-node-expand {
+  align-self: flex-start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--asphalt);
+  font: 800 13px / 1.2 var(--font);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.tree-node:focus-visible {
+  outline: 4px solid var(--taxi);
+  outline-offset: 4px;
+}
+
+.tree-detail {
+  position: absolute;
+  z-index: 45;
+  right: 24px;
+  bottom: 92px;
+  width: min(440px, calc(100vw - 48px));
+  max-height: min(58vh, 480px);
+  overflow: auto;
+  padding: 20px 52px 20px 20px;
+  background: var(--kerb);
+  border: var(--outline);
+  border-radius: 18px;
+  box-shadow: var(--lift);
+}
+
+.tree-detail-meta {
+  margin: 0 0 8px;
+  color: var(--asphalt-soft);
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.tree-detail-text {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.tree-detail-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border: 2px solid var(--asphalt);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--asphalt);
+  font: 800 23px / 1 var(--font);
+  cursor: pointer;
+}
+
+/* A saved town can be replayed one event at a time without leaving the scene. */
+.playback-bar {
+  position: absolute;
+  z-index: 50;
+  right: 0;
+  bottom: clamp(140px, 22vh, 280px);
+  left: 16px;
+  width: min(520px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.playback-track {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.playback-button {
+  display: grid;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  place-items: center;
+  border: 3px solid var(--asphalt);
+  border-radius: 50%;
+  background: var(--taxi);
+  color: var(--asphalt);
+  box-shadow: 0 4px 0 var(--asphalt);
+  cursor: pointer;
+}
+
+.playback-button svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.playback-button:active {
+  translate: 0 3px;
+  box-shadow: 0 1px 0 var(--asphalt);
+}
+
+.playback-button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.playback-button:focus-visible {
+  outline: 4px solid var(--kerb);
+  outline-offset: 3px;
+}
+
+.playback-slider {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  height: 10px;
+  margin: 0;
+  border: 3px solid var(--asphalt);
+  border-radius: 999px;
+  appearance: none;
+  box-shadow: 0 3px 0 var(--asphalt);
+  cursor: pointer;
+}
+
+.playback-slider::-webkit-slider-thumb {
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--asphalt);
+  border-radius: 50%;
+  background: var(--taxi);
+  appearance: none;
+  box-shadow: 0 3px 0 var(--asphalt);
+}
+
+.playback-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 3px solid var(--asphalt);
+  border-radius: 50%;
+  background: var(--taxi);
+  box-shadow: 0 3px 0 var(--asphalt);
 }
 
 @media (max-width: 560px) {
   .wordmark {
     padding: 16px;
+  }
+
+  .house-inspector {
+    width: min(300px, calc(100vw - 32px));
+    max-height: 280px;
+    transform: translate(-50%, -45%);
+  }
+
+  .house-inspector::after {
+    top: auto;
+    bottom: -12px;
+    left: calc(50% - 10px);
+    border-top: 0;
+    border-right: var(--outline);
+    border-bottom: var(--outline);
+    border-left: 0;
   }
 
   /* No room to center it next to the wordmark, so it moves to the right. */
@@ -587,6 +1426,20 @@ body {
     left: auto;
     right: 12px;
     transform: none;
+  }
+
+  .home-tab {
+    padding-inline: 10px;
+  }
+
+  .tab {
+    padding-inline: 14px;
+  }
+
+  .tree-detail {
+    right: 16px;
+    bottom: 92px;
+    width: calc(100vw - 32px);
   }
 
   .ask-bubble {
@@ -599,9 +1452,33 @@ body {
   }
 
   .ask-hint,
-  .ask-error {
+  .ask-error,
+  .ask-feedback {
     margin-left: 4px;
   }
+
+  .run-inspector {
+    height: min(48dvh, 280px);
+  }
+
+  .run-row {
+    padding-inline: 9px;
+  }
+
+  .run-row-copy span {
+    font-size: 12px;
+  }
+
+  .run-actions {
+    gap: 5px;
+  }
+
+  .view-run-button,
+  .stop-button {
+    padding-inline: 8px;
+    font-size: 12px;
+  }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -614,16 +1491,40 @@ body {
     animation: none;
   }
 
-  .bubble {
-    animation-name: bubble-fade;
+  .run-row {
+    animation: none;
+  }
+
+  .house-card {
+    animation-name: letter-fade;
+  }
+
+  .letter-go {
+    animation: letter-fade 7s linear both;
+  }
+
+  .agreement-badge {
+    animation: none;
+  }
+
+  .letter-decor {
+    display: none;
+  }
+
+  .letter-text {
+    animation: none;
   }
 
   .tree-node {
     animation: none;
   }
+
+  .playback-button:active {
+    translate: none;
+  }
 }
 
-@keyframes bubble-fade {
+@keyframes letter-fade {
   0%,
   85% {
     opacity: 1;

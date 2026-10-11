@@ -1,5 +1,5 @@
 import { linkHorizontal } from "d3-shape";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { shortName } from "../names";
 import { livingSupport, type Town } from "../town";
 import { layoutTree, NODE_HEIGHT, NODE_WIDTH, type PlacedLink } from "./layout";
@@ -15,6 +15,8 @@ export function TreeView({ town }: { town: Town }) {
   const layout = useMemo(() => layoutTree(Object.values(town.branches)), [town.branches]);
   const support = livingSupport(town);
   const nameOf = (id: string) => (town.characters[id] ? shortName(town.characters[id].persona.name) : id);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const expanded = expandedId ? town.branches[expandedId] : null;
 
   return (
     <section className="tree-view" aria-label="How the idea grew">
@@ -42,6 +44,8 @@ export function TreeView({ town }: { town: Town }) {
                 data-support={Math.min(backers.length, 3)}
                 style={{ left, top, width: NODE_WIDTH, height: NODE_HEIGHT }}
                 title={branch.text}
+                tabIndex={0}
+                aria-label={`${OP_LABELS[branch.op]}: ${branch.text}`}
               >
                 <p className="tree-node-meta">
                   <span className="tree-node-op">{OP_LABELS[branch.op]}</span>
@@ -53,11 +57,31 @@ export function TreeView({ town }: { town: Town }) {
                   )}
                 </p>
                 <p className="tree-node-text">{branch.text}</p>
+                <button
+                  className="tree-node-expand"
+                  type="button"
+                  aria-expanded={expandedId === id}
+                  onClick={() => setExpandedId((current) => (current === id ? null : id))}
+                >
+                  {expandedId === id ? "Close" : "Read full idea"}
+                </button>
               </article>
             );
           })}
         </div>
       </div>
+      {expanded && (
+        <aside className="tree-detail" aria-label="Expanded idea">
+          <button className="tree-detail-close" type="button" onClick={() => setExpandedId(null)} aria-label="Close expanded idea">
+            ×
+          </button>
+          <p className="tree-detail-meta">
+            {OP_LABELS[expanded.op]}
+            {expanded.op !== "seed" && ` by ${expanded.authors.map(nameOf).join(" + ")}`}
+          </p>
+          <p className="tree-detail-text">{expanded.text}</p>
+        </aside>
+      )}
     </section>
   );
 }

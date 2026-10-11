@@ -6,7 +6,8 @@ import { stratify, tree } from "d3-hierarchy";
 import type { Branch } from "../town";
 
 export const NODE_WIDTH = 230;
-export const NODE_HEIGHT = 98;
+// Idea text is the tree's primary content, so every node reserves room for a full thought.
+export const NODE_HEIGHT = 210;
 const COLUMN_GAP = 64;
 const ROW_GAP = 16;
 

@@ -2,26 +2,31 @@ import { useState } from "react";
 import { AskScreen } from "./AskScreen";
 import { City } from "./city/City";
 import { ReadyPanel } from "./ReadyPanel";
+import { PlaybackBar } from "./PlaybackBar";
 import { TabSwitcher, type View } from "./TabSwitcher";
 import { LOT_COUNT } from "./town";
 import { TreeView } from "./tree/TreeView";
 import { useRun } from "./useRun";
 
 export function App() {
-  const { town, connection, submit, start } = useRun();
+  const { town, connection, submit, start, openRun, home, timeline } = useRun();
   const residents = town.lots.flatMap((id) => (id ? [town.characters[id].persona] : []));
   const [view, setView] = useState<View>("city");
   const started = town.phase === "running" || town.phase === "ended";
+  const goHome = () => {
+    setView("city");
+    home();
+  };
 
   return (
     <div className="app">
       <header className="wordmark">Oddtown</header>
       {town.phase === "ask" ? (
-        <AskScreen onSubmit={submit} />
+        <AskScreen onSubmit={submit} onOpenRun={openRun} />
       ) : (
         <main className="city-screen">
           <div className="city-stage">
-            <City town={town} />
+            <City town={town} trafficPaused={Boolean(timeline && !timeline.playing)} />
             <div className="city-overlay" aria-live="polite">
               {town.phase === "loading" && (
                 <>
@@ -51,7 +56,8 @@ export function App() {
           {town.phase === "ready" && <ReadyPanel residents={residents} onStart={start} />}
           {/* The tree covers the city instead of replacing it, so the city keeps running underneath. */}
           {started && view === "tree" && <TreeView town={town} />}
-          {started && <TabSwitcher view={view} onChange={setView} />}
+          {started && <TabSwitcher view={view} onChange={setView} onHome={goHome} />}
+          {timeline && <PlaybackBar timeline={timeline} />}
         </main>
       )}
     </div>

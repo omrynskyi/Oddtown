@@ -339,6 +339,31 @@
  {
   "run_id": "run_fixture",
   "seq": 15,
+  "ts": 1760173210.4476655,
+  "type": "idea.share",
+  "agent_id": "char_dez",
+  "payload": {
+   "to": "char_anselm",
+   "branch_id": "br_001",
+   "note": "Tell me where this goes wrong."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 16,
+  "ts": 1760173211.7476656,
+  "type": "idea.reaction",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_dez",
+   "branch_id": "br_001",
+   "answer": "accept",
+   "text": "That works. I'll back it."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 17,
   "ts": 1760173213.3132415,
   "type": "agent.decision",
   "agent_id": "char_rook",
@@ -351,7 +376,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 16,
+  "seq": 18,
   "ts": 1760173213.4132416,
   "type": "branch.created",
   "agent_id": "char_rook",
@@ -369,7 +394,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 17,
+  "seq": 19,
   "ts": 1760173213.5132415,
   "type": "endorse",
   "agent_id": "char_rook",
@@ -379,7 +404,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 18,
+  "seq": 20,
+  "ts": 1760173213.6132414,
+  "type": "idea.share",
+  "agent_id": "char_rook",
+  "payload": {
+   "to": "char_marg",
+   "branch_id": "br_002",
+   "note": "You of all people should hear this."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 21,
+  "ts": 1760173214.9132416,
+  "type": "idea.reaction",
+  "agent_id": "char_marg",
+  "payload": {
+   "to": "char_rook",
+   "branch_id": "br_002",
+   "answer": "reject",
+   "text": "You lost me at the second line."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 22,
   "ts": 1760173215.4946675,
   "type": "agent.decision",
   "agent_id": "char_priya",
@@ -392,7 +442,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 19,
+  "seq": 23,
   "ts": 1760173215.5946677,
   "type": "branch.created",
   "agent_id": "char_priya",
@@ -410,7 +460,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 20,
+  "seq": 24,
+  "ts": 1760173215.7946675,
+  "type": "idea.share",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_tamsin",
+   "branch_id": "br_003",
+   "note": "Tell me where this goes wrong."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 25,
+  "ts": 1760173217.0946677,
+  "type": "idea.reaction",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_003",
+   "answer": "accept",
+   "text": "Yes. Finally, someone gets it."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 26,
   "ts": 1760173218.6606615,
   "type": "agent.decision",
   "agent_id": "char_anselm",
@@ -423,7 +498,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 21,
+  "seq": 27,
   "ts": 1760173218.8606613,
   "type": "endorse",
   "agent_id": "char_anselm",
@@ -433,7 +508,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 22,
+  "seq": 28,
+  "ts": 1760173218.9606614,
+  "type": "idea.share",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_dez",
+   "branch_id": "br_001",
+   "note": "Tell me where this goes wrong."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 29,
+  "ts": 1760173220.2606614,
+  "type": "idea.reaction",
+  "agent_id": "char_dez",
+  "payload": {
+   "to": "char_anselm",
+   "branch_id": "br_001",
+   "answer": "reject",
+   "text": "That sinks in the first storm."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 30,
   "ts": 1760173222.6131716,
   "type": "agent.decision",
   "agent_id": "char_anselm",
@@ -446,7 +546,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 23,
+  "seq": 31,
   "ts": 1760173222.8131716,
   "type": "endorse",
   "agent_id": "char_anselm",
@@ -456,7 +556,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 24,
+  "seq": 32,
+  "ts": 1760173222.9131715,
+  "type": "idea.share",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_tamsin",
+   "branch_id": "br_002",
+   "note": "You of all people should hear this."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 33,
+  "ts": 1760173224.2131715,
+  "type": "idea.reaction",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "to": "char_anselm",
+   "branch_id": "br_002",
+   "answer": "reject",
+   "text": "No. That's not what I'd build."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 34,
   "ts": 1760173225.4514496,
   "type": "agent.decision",
   "agent_id": "char_rook",
@@ -469,7 +594,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 25,
+  "seq": 35,
   "ts": 1760173225.5514498,
   "type": "branch.created",
   "agent_id": "char_rook",
@@ -487,7 +612,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 26,
+  "seq": 36,
+  "ts": 1760173225.7514496,
+  "type": "idea.share",
+  "agent_id": "char_rook",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_004",
+   "note": "You of all people should hear this."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 37,
+  "ts": 1760173227.0514498,
+  "type": "idea.reaction",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_rook",
+   "branch_id": "br_004",
+   "answer": "accept",
+   "text": "Fine, I'm in."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 38,
   "ts": 1760173228.7292767,
   "type": "agent.decision",
   "agent_id": "char_marg",
@@ -500,7 +650,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 27,
+  "seq": 39,
   "ts": 1760173228.8292766,
   "type": "branch.created",
   "agent_id": "char_marg",
@@ -518,7 +668,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 28,
+  "seq": 40,
   "ts": 1760173228.9292767,
   "type": "endorse",
   "agent_id": "char_marg",
@@ -528,7 +678,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 29,
+  "seq": 41,
+  "ts": 1760173229.0292766,
+  "type": "idea.share",
+  "agent_id": "char_marg",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_005",
+   "note": "You of all people should hear this."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 42,
+  "ts": 1760173230.3292766,
+  "type": "idea.reaction",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_marg",
+   "branch_id": "br_005",
+   "answer": "accept",
+   "text": "Yes. Finally, someone gets it."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 43,
   "ts": 1760173231.141194,
   "type": "agent.decision",
   "agent_id": "char_tamsin",
@@ -541,7 +716,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 30,
+  "seq": 44,
   "ts": 1760173231.3411942,
   "type": "endorse",
   "agent_id": "char_tamsin",
@@ -551,7 +726,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 31,
+  "seq": 45,
+  "ts": 1760173231.441194,
+  "type": "idea.share",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "to": "char_anselm",
+   "branch_id": "br_004",
+   "note": "Tell me where this goes wrong."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 46,
+  "ts": 1760173232.741194,
+  "type": "idea.reaction",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_tamsin",
+   "branch_id": "br_004",
+   "answer": "accept",
+   "text": "That works. I'll back it."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 47,
   "ts": 1760173234.3123178,
   "type": "agent.decision",
   "agent_id": "char_priya",
@@ -564,7 +764,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 32,
+  "seq": 48,
   "ts": 1760173234.5123177,
   "type": "endorse",
   "agent_id": "char_priya",
@@ -574,7 +774,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 33,
+  "seq": 49,
+  "ts": 1760173234.6123178,
+  "type": "idea.share",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_rook",
+   "branch_id": "br_002",
+   "note": "I think this is the one worth backing."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 50,
+  "ts": 1760173235.9123178,
+  "type": "idea.reaction",
+  "agent_id": "char_rook",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_002",
+   "answer": "accept",
+   "text": "Fine, I'm in."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 51,
   "ts": 1760173237.7103066,
   "type": "agent.decision",
   "agent_id": "char_dez",
@@ -587,7 +812,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 34,
+  "seq": 52,
   "ts": 1760173237.8103065,
   "type": "branch.created",
   "agent_id": "char_dez",
@@ -605,7 +830,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 35,
+  "seq": 53,
+  "ts": 1760173238.0103066,
+  "type": "idea.share",
+  "agent_id": "char_dez",
+  "payload": {
+   "to": "char_anselm",
+   "branch_id": "br_006",
+   "note": "You of all people should hear this."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 54,
+  "ts": 1760173239.3103065,
+  "type": "idea.reaction",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_dez",
+   "branch_id": "br_006",
+   "answer": "accept",
+   "text": "That works. I'll back it."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 55,
   "ts": 1760173241.1691973,
   "type": "agent.decision",
   "agent_id": "char_marg",
@@ -618,7 +868,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 36,
+  "seq": 56,
+  "ts": 1760173241.4691973,
+  "type": "idea.pitch",
+  "agent_id": "char_marg",
+  "payload": {
+   "to": "char_rook",
+   "branch_id": "br_001",
+   "note": "I think this is the one worth backing."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 57,
+  "ts": 1760173242.7691972,
+  "type": "pitch.response",
+  "agent_id": "char_rook",
+  "payload": {
+   "to": "char_marg",
+   "branch_id": "br_001",
+   "persuaded": true,
+   "text": "You've talked me round."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 58,
   "ts": 1760173244.1930628,
   "type": "agent.decision",
   "agent_id": "char_dez",
@@ -631,7 +906,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 37,
+  "seq": 59,
+  "ts": 1760173244.493063,
+  "type": "idea.share",
+  "agent_id": "char_dez",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_004",
+   "note": "You of all people should hear this."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 60,
+  "ts": 1760173245.793063,
+  "type": "idea.reaction",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_dez",
+   "branch_id": "br_004",
+   "answer": "reject",
+   "text": "No. That's not what I'd build."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 61,
   "ts": 1760173247.0364597,
   "type": "agent.decision",
   "agent_id": "char_tamsin",
@@ -644,7 +944,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 38,
+  "seq": 62,
   "ts": 1760173247.1364596,
   "type": "branch.created",
   "agent_id": "char_tamsin",
@@ -662,7 +962,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 39,
+  "seq": 63,
   "ts": 1760173247.2364595,
   "type": "endorse",
   "agent_id": "char_tamsin",
@@ -672,7 +972,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 40,
+  "seq": 64,
+  "ts": 1760173247.3364596,
+  "type": "idea.share",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_007",
+   "note": "Have a look at this one. It might surprise you."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 65,
+  "ts": 1760173248.6364596,
+  "type": "idea.reaction",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_tamsin",
+   "branch_id": "br_007",
+   "answer": "accept",
+   "text": "Yes. Finally, someone gets it."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 66,
   "ts": 1760173249.7368164,
   "type": "agent.decision",
   "agent_id": "char_priya",
@@ -685,7 +1010,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 41,
+  "seq": 67,
   "ts": 1760173249.9368165,
   "type": "endorse",
   "agent_id": "char_priya",
@@ -695,7 +1020,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 42,
+  "seq": 68,
+  "ts": 1760173250.0368164,
+  "type": "idea.share",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_dez",
+   "branch_id": "br_001",
+   "note": "Have a look at this one. It might surprise you."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 69,
+  "ts": 1760173251.3368163,
+  "type": "idea.reaction",
+  "agent_id": "char_dez",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_001",
+   "answer": "accept",
+   "text": "You've talked me round."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 70,
   "ts": 1760173253.4167519,
   "type": "agent.decision",
   "agent_id": "char_marg",
@@ -708,7 +1058,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 43,
+  "seq": 71,
   "ts": 1760173253.616752,
   "type": "endorse",
   "agent_id": "char_marg",
@@ -718,7 +1068,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 44,
+  "seq": 72,
+  "ts": 1760173253.7167518,
+  "type": "idea.share",
+  "agent_id": "char_marg",
+  "payload": {
+   "to": "char_rook",
+   "branch_id": "br_001",
+   "note": "Have a look at this one. It might surprise you."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 73,
+  "ts": 1760173255.016752,
+  "type": "idea.reaction",
+  "agent_id": "char_rook",
+  "payload": {
+   "to": "char_marg",
+   "branch_id": "br_001",
+   "answer": "accept",
+   "text": "Fine, I'm in."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 74,
   "ts": 1760173255.5380907,
   "type": "agent.decision",
   "agent_id": "char_tamsin",
@@ -731,7 +1106,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 45,
+  "seq": 75,
   "ts": 1760173255.6380908,
   "type": "branch.created",
   "agent_id": "char_tamsin",
@@ -749,7 +1124,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 46,
+  "seq": 76,
+  "ts": 1760173255.8380907,
+  "type": "idea.share",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "to": "char_anselm",
+   "branch_id": "br_008",
+   "note": "Have a look at this one. It might surprise you."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 77,
+  "ts": 1760173257.1380908,
+  "type": "idea.reaction",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_tamsin",
+   "branch_id": "br_008",
+   "answer": "reject",
+   "text": "Absolutely not."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 78,
   "ts": 1760173259.3121715,
   "type": "agent.decision",
   "agent_id": "char_marg",
@@ -762,7 +1162,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 47,
+  "seq": 79,
   "ts": 1760173259.4121714,
   "type": "branch.created",
   "agent_id": "char_marg",
@@ -780,7 +1180,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 48,
+  "seq": 80,
+  "ts": 1760173259.6121714,
+  "type": "idea.share",
+  "agent_id": "char_marg",
+  "payload": {
+   "to": "char_tamsin",
+   "branch_id": "br_009",
+   "note": "Have a look at this one. It might surprise you."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 81,
+  "ts": 1760173260.9121714,
+  "type": "idea.reaction",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "to": "char_marg",
+   "branch_id": "br_009",
+   "answer": "reject",
+   "text": "No. That's not what I'd build."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 82,
   "ts": 1760173262.2995574,
   "type": "agent.decision",
   "agent_id": "char_dez",
@@ -793,7 +1218,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 49,
+  "seq": 83,
+  "ts": 1760173262.5995574,
+  "type": "idea.share",
+  "agent_id": "char_dez",
+  "payload": {
+   "to": "char_anselm",
+   "branch_id": "br_004",
+   "note": "Have a look at this one. It might surprise you."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 84,
+  "ts": 1760173263.8995574,
+  "type": "idea.reaction",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_dez",
+   "branch_id": "br_004",
+   "answer": "reject",
+   "text": "You lost me at the second line."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 85,
   "ts": 1760173265.0953526,
   "type": "agent.decision",
   "agent_id": "char_priya",
@@ -806,7 +1256,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 50,
+  "seq": 86,
   "ts": 1760173265.1953528,
   "type": "branch.created",
   "agent_id": "char_priya",
@@ -824,7 +1274,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 51,
+  "seq": 87,
   "ts": 1760173266.5,
   "type": "agent.last_words",
   "agent_id": "char_rook",
@@ -834,7 +1284,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 52,
+  "seq": 88,
   "ts": 1760173267.0,
   "type": "agent.died",
   "agent_id": "char_rook",
@@ -848,7 +1298,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 53,
+  "seq": 89,
   "ts": 1760173268.7339125,
   "type": "agent.decision",
   "agent_id": "char_priya",
@@ -860,7 +1310,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 54,
+  "seq": 90,
   "ts": 1760173270.5,
   "type": "agent.born",
   "agent_id": "char_ines",
@@ -903,7 +1353,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 55,
+  "seq": 91,
   "ts": 1760173270.8,
   "type": "agent.hello",
   "agent_id": "char_ines",
@@ -913,7 +1363,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 56,
+  "seq": 92,
   "ts": 1760173270.8998818,
   "type": "agent.decision",
   "agent_id": "char_dez",
@@ -926,7 +1376,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 57,
+  "seq": 93,
   "ts": 1760173270.9998817,
   "type": "branch.created",
   "agent_id": "char_dez",
@@ -944,7 +1394,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 58,
+  "seq": 94,
+  "ts": 1760173271.1998818,
+  "type": "idea.share",
+  "agent_id": "char_dez",
+  "payload": {
+   "to": "char_ines",
+   "branch_id": "br_011",
+   "note": "Tell me where this goes wrong."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 95,
+  "ts": 1760173272.4998817,
+  "type": "idea.reaction",
+  "agent_id": "char_ines",
+  "payload": {
+   "to": "char_dez",
+   "branch_id": "br_011",
+   "answer": "reject",
+   "text": "That sinks in the first storm."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 96,
   "ts": 1760173273.2645676,
   "type": "agent.decision",
   "agent_id": "char_ines",
@@ -957,7 +1432,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 59,
+  "seq": 97,
   "ts": 1760173273.3645675,
   "type": "branch.created",
   "agent_id": "char_ines",
@@ -975,7 +1450,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 60,
+  "seq": 98,
+  "ts": 1760173273.5645676,
+  "type": "idea.share",
+  "agent_id": "char_ines",
+  "payload": {
+   "to": "char_marg",
+   "branch_id": "br_012",
+   "note": "Have a look at this one. It might surprise you."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 99,
+  "ts": 1760173274.8645675,
+  "type": "idea.reaction",
+  "agent_id": "char_marg",
+  "payload": {
+   "to": "char_ines",
+   "branch_id": "br_012",
+   "answer": "accept",
+   "text": "Yes. Finally, someone gets it."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 100,
   "ts": 1760173275.9017909,
   "type": "agent.decision",
   "agent_id": "char_dez",
@@ -988,7 +1488,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 61,
+  "seq": 101,
+  "ts": 1760173276.2017908,
+  "type": "idea.pitch",
+  "agent_id": "char_dez",
+  "payload": {
+   "to": "char_anselm",
+   "branch_id": "br_010",
+   "note": "Have a look at this one. It might surprise you."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 102,
+  "ts": 1760173277.5017908,
+  "type": "pitch.response",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_dez",
+   "branch_id": "br_010",
+   "persuaded": true,
+   "text": "You've talked me round."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 103,
   "ts": 1760173279.2117238,
   "type": "agent.decision",
   "agent_id": "char_tamsin",
@@ -1001,7 +1526,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 62,
+  "seq": 104,
   "ts": 1760173279.3117237,
   "type": "branch.created",
   "agent_id": "char_tamsin",
@@ -1019,7 +1544,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 63,
+  "seq": 105,
   "ts": 1760173279.361724,
   "type": "unendorse",
   "agent_id": "char_tamsin",
@@ -1029,7 +1554,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 64,
+  "seq": 106,
   "ts": 1760173279.4117239,
   "type": "endorse",
   "agent_id": "char_tamsin",
@@ -1039,7 +1564,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 65,
+  "seq": 107,
+  "ts": 1760173279.5117238,
+  "type": "idea.share",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "to": "char_anselm",
+   "branch_id": "br_013",
+   "note": "Tell me where this goes wrong."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 108,
+  "ts": 1760173280.8117237,
+  "type": "idea.reaction",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_tamsin",
+   "branch_id": "br_013",
+   "answer": "reject",
+   "text": "No. That's not what I'd build."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 109,
   "ts": 1760173281.9999638,
   "type": "agent.decision",
   "agent_id": "char_marg",
@@ -1052,7 +1602,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 66,
+  "seq": 110,
+  "ts": 1760173282.299964,
+  "type": "idea.pitch",
+  "agent_id": "char_marg",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_004",
+   "note": "You of all people should hear this."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 111,
+  "ts": 1760173283.599964,
+  "type": "pitch.response",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_marg",
+   "branch_id": "br_004",
+   "persuaded": true,
+   "text": "Fine, I'm in."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 112,
   "ts": 1760173284.134659,
   "type": "agent.decision",
   "agent_id": "char_dez",
@@ -1065,7 +1640,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 67,
+  "seq": 113,
   "ts": 1760173284.334659,
   "type": "endorse",
   "agent_id": "char_dez",
@@ -1075,7 +1650,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 68,
+  "seq": 114,
+  "ts": 1760173284.434659,
+  "type": "idea.share",
+  "agent_id": "char_dez",
+  "payload": {
+   "to": "char_anselm",
+   "branch_id": "br_006",
+   "note": "Have a look at this one. It might surprise you."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 115,
+  "ts": 1760173285.734659,
+  "type": "idea.reaction",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_dez",
+   "branch_id": "br_006",
+   "answer": "reject",
+   "text": "You lost me at the second line."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 116,
   "ts": 1760173287.3361137,
   "type": "agent.decision",
   "agent_id": "char_anselm",
@@ -1088,7 +1688,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 69,
+  "seq": 117,
   "ts": 1760173287.4361136,
   "type": "branch.created",
   "agent_id": "char_anselm",
@@ -1106,7 +1706,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 70,
+  "seq": 118,
+  "ts": 1760173287.6361136,
+  "type": "idea.share",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_dez",
+   "branch_id": "br_014",
+   "note": "Have a look at this one. It might surprise you."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 119,
+  "ts": 1760173288.9361136,
+  "type": "idea.reaction",
+  "agent_id": "char_dez",
+  "payload": {
+   "to": "char_anselm",
+   "branch_id": "br_014",
+   "answer": "reject",
+   "text": "You lost me at the second line."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 120,
   "ts": 1760173290.5635881,
   "type": "agent.decision",
   "agent_id": "char_anselm",
@@ -1119,7 +1744,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 71,
+  "seq": 121,
   "ts": 1760173290.663588,
   "type": "branch.created",
   "agent_id": "char_anselm",
@@ -1139,7 +1764,33 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 72,
+  "seq": 122,
+  "ts": 1760173290.863588,
+  "type": "merge.propose",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_ines",
+   "branch_ids": [
+    "br_007"
+   ],
+   "note": "I think this is the one worth backing."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 123,
+  "ts": 1760173292.163588,
+  "type": "merge.response",
+  "agent_id": "char_ines",
+  "payload": {
+   "to": "char_anselm",
+   "answer": "accept",
+   "text": "Fine, I'm in."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 124,
   "ts": 1760173293.8324072,
   "type": "agent.decision",
   "agent_id": "char_ines",
@@ -1152,7 +1803,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 73,
+  "seq": 125,
+  "ts": 1760173294.1324072,
+  "type": "idea.pitch",
+  "agent_id": "char_ines",
+  "payload": {
+   "to": "char_marg",
+   "branch_id": "br_002",
+   "note": "You of all people should hear this."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 126,
+  "ts": 1760173295.4324074,
+  "type": "pitch.response",
+  "agent_id": "char_marg",
+  "payload": {
+   "to": "char_ines",
+   "branch_id": "br_002",
+   "persuaded": true,
+   "text": "Fine, I'm in."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 127,
   "ts": 1760173296.0631144,
   "type": "agent.decision",
   "agent_id": "char_marg",
@@ -1164,7 +1840,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 74,
+  "seq": 128,
   "ts": 1760173296.5,
   "type": "world.event",
   "agent_id": null,
@@ -1175,7 +1851,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 75,
+  "seq": 129,
   "ts": 1760173299.0239046,
   "type": "agent.decision",
   "agent_id": "char_ines",
@@ -1188,7 +1864,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 76,
+  "seq": 130,
   "ts": 1760173299.1239045,
   "type": "branch.created",
   "agent_id": "char_ines",
@@ -1206,7 +1882,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 77,
+  "seq": 131,
   "ts": 1760173299.2239046,
   "type": "endorse",
   "agent_id": "char_ines",
@@ -1216,7 +1892,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 78,
+  "seq": 132,
+  "ts": 1760173299.3239045,
+  "type": "idea.share",
+  "agent_id": "char_ines",
+  "payload": {
+   "to": "char_marg",
+   "branch_id": "br_016",
+   "note": "Tell me where this goes wrong."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 133,
+  "ts": 1760173300.6239045,
+  "type": "idea.reaction",
+  "agent_id": "char_marg",
+  "payload": {
+   "to": "char_ines",
+   "branch_id": "br_016",
+   "answer": "reject",
+   "text": "No. That's not what I'd build."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 134,
   "ts": 1760173302.408018,
   "type": "agent.decision",
   "agent_id": "char_priya",
@@ -1229,7 +1930,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 79,
+  "seq": 135,
   "ts": 1760173302.508018,
   "type": "branch.created",
   "agent_id": "char_priya",
@@ -1247,7 +1948,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 80,
+  "seq": 136,
+  "ts": 1760173302.708018,
+  "type": "idea.share",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_ines",
+   "branch_id": "br_017",
+   "note": "Tell me where this goes wrong."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 137,
+  "ts": 1760173304.008018,
+  "type": "idea.reaction",
+  "agent_id": "char_ines",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_017",
+   "answer": "accept",
+   "text": "Yes. Finally, someone gets it."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 138,
   "ts": 1760173306.2363095,
   "type": "agent.decision",
   "agent_id": "char_priya",
@@ -1260,7 +1986,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 81,
+  "seq": 139,
   "ts": 1760173306.3863096,
   "type": "unendorse",
   "agent_id": "char_priya",
@@ -1270,7 +1996,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 82,
+  "seq": 140,
   "ts": 1760173306.4363096,
   "type": "endorse",
   "agent_id": "char_priya",
@@ -1280,7 +2006,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 83,
+  "seq": 141,
+  "ts": 1760173306.5363097,
+  "type": "idea.share",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_marg",
+   "branch_id": "br_003",
+   "note": "You of all people should hear this."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 142,
+  "ts": 1760173307.8363097,
+  "type": "idea.reaction",
+  "agent_id": "char_marg",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_003",
+   "answer": "accept",
+   "text": "You've talked me round."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 143,
   "ts": 1760173309.628703,
   "type": "agent.decision",
   "agent_id": "char_ines",
@@ -1293,7 +2044,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 84,
+  "seq": 144,
   "ts": 1760173309.8287032,
   "type": "endorse",
   "agent_id": "char_ines",
@@ -1303,7 +2054,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 85,
+  "seq": 145,
+  "ts": 1760173309.9287033,
+  "type": "idea.share",
+  "agent_id": "char_ines",
+  "payload": {
+   "to": "char_tamsin",
+   "branch_id": "br_012",
+   "note": "Have a look at this one. It might surprise you."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 146,
+  "ts": 1760173311.2287033,
+  "type": "idea.reaction",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "to": "char_ines",
+   "branch_id": "br_012",
+   "answer": "reject",
+   "text": "You lost me at the second line."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 147,
   "ts": 1760173313.172579,
   "type": "agent.decision",
   "agent_id": "char_priya",
@@ -1316,7 +2092,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 86,
+  "seq": 148,
   "ts": 1760173313.322579,
   "type": "unendorse",
   "agent_id": "char_priya",
@@ -1326,7 +2102,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 87,
+  "seq": 149,
   "ts": 1760173313.372579,
   "type": "endorse",
   "agent_id": "char_priya",
@@ -1336,7 +2112,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 88,
+  "seq": 150,
+  "ts": 1760173313.472579,
+  "type": "idea.share",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_marg",
+   "branch_id": "br_011",
+   "note": "You of all people should hear this."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 151,
+  "ts": 1760173314.772579,
+  "type": "idea.reaction",
+  "agent_id": "char_marg",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_011",
+   "answer": "reject",
+   "text": "Absolutely not."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 152,
   "ts": 1760173316.445463,
   "type": "agent.decision",
   "agent_id": "char_priya",
@@ -1349,7 +2150,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 89,
+  "seq": 153,
+  "ts": 1760173316.745463,
+  "type": "idea.share",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_marg",
+   "branch_id": "br_008",
+   "note": "Have a look at this one. It might surprise you."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 154,
+  "ts": 1760173318.0454628,
+  "type": "idea.reaction",
+  "agent_id": "char_marg",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_008",
+   "answer": "accept",
+   "text": "Yes. Finally, someone gets it."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 155,
   "ts": 1760173320.0821288,
   "type": "agent.decision",
   "agent_id": "char_tamsin",
@@ -1362,7 +2188,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 90,
+  "seq": 156,
+  "ts": 1760173320.3821287,
+  "type": "idea.share",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "to": "char_ines",
+   "branch_id": "br_017",
+   "note": "Have a look at this one. It might surprise you."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 157,
+  "ts": 1760173321.6821287,
+  "type": "idea.reaction",
+  "agent_id": "char_ines",
+  "payload": {
+   "to": "char_tamsin",
+   "branch_id": "br_017",
+   "answer": "reject",
+   "text": "Absolutely not."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 158,
   "ts": 1760173323.0676925,
   "type": "agent.decision",
   "agent_id": "char_tamsin",
@@ -1375,7 +2226,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 91,
+  "seq": 159,
   "ts": 1760173323.2176924,
   "type": "unendorse",
   "agent_id": "char_tamsin",
@@ -1385,7 +2236,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 92,
+  "seq": 160,
   "ts": 1760173323.2676923,
   "type": "endorse",
   "agent_id": "char_tamsin",
@@ -1395,7 +2246,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 93,
+  "seq": 161,
+  "ts": 1760173323.3676925,
+  "type": "idea.share",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "to": "char_anselm",
+   "branch_id": "br_009",
+   "note": "I think this is the one worth backing."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 162,
+  "ts": 1760173324.6676924,
+  "type": "idea.reaction",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_tamsin",
+   "branch_id": "br_009",
+   "answer": "accept",
+   "text": "You've talked me round."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 163,
   "ts": 1760173326.0121725,
   "type": "agent.decision",
   "agent_id": "char_dez",
@@ -1408,7 +2284,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 94,
+  "seq": 164,
+  "ts": 1760173326.3121727,
+  "type": "idea.pitch",
+  "agent_id": "char_dez",
+  "payload": {
+   "to": "char_anselm",
+   "branch_id": "br_015",
+   "note": "Tell me where this goes wrong."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 165,
+  "ts": 1760173327.6121726,
+  "type": "pitch.response",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_dez",
+   "branch_id": "br_015",
+   "persuaded": true,
+   "text": "That works. I'll back it."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 166,
   "ts": 1760173329.629304,
   "type": "agent.decision",
   "agent_id": "char_tamsin",
@@ -1420,7 +2321,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 95,
+  "seq": 167,
   "ts": 1760173331.7903802,
   "type": "agent.decision",
   "agent_id": "char_anselm",
@@ -1433,7 +2334,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 96,
+  "seq": 168,
   "ts": 1760173331.8903804,
   "type": "branch.created",
   "agent_id": "char_anselm",
@@ -1451,7 +2352,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 97,
+  "seq": 169,
   "ts": 1760173331.9403803,
   "type": "unendorse",
   "agent_id": "char_anselm",
@@ -1461,7 +2362,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 98,
+  "seq": 170,
   "ts": 1760173331.9903803,
   "type": "endorse",
   "agent_id": "char_anselm",
@@ -1471,7 +2372,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 99,
+  "seq": 171,
+  "ts": 1760173332.0903802,
+  "type": "idea.share",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_018",
+   "note": "You of all people should hear this."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 172,
+  "ts": 1760173333.3903804,
+  "type": "idea.reaction",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_anselm",
+   "branch_id": "br_018",
+   "answer": "accept",
+   "text": "Yes. Finally, someone gets it."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 173,
   "ts": 1760173335.7608783,
   "type": "agent.decision",
   "agent_id": "char_priya",
@@ -1484,7 +2410,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 100,
+  "seq": 174,
   "ts": 1760173335.8608782,
   "type": "branch.created",
   "agent_id": "char_priya",
@@ -1503,7 +2429,33 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 101,
+  "seq": 175,
+  "ts": 1760173336.0608783,
+  "type": "merge.propose",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_anselm",
+   "branch_ids": [
+    "br_012"
+   ],
+   "note": "You of all people should hear this."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 176,
+  "ts": 1760173337.3608782,
+  "type": "merge.response",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_priya",
+   "answer": "accept",
+   "text": "Yes. Finally, someone gets it."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 177,
   "ts": 1760173339.430176,
   "type": "agent.decision",
   "agent_id": "char_anselm",
@@ -1516,7 +2468,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 102,
+  "seq": 178,
   "ts": 1760173339.530176,
   "type": "branch.created",
   "agent_id": "char_anselm",
@@ -1536,7 +2488,33 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 103,
+  "seq": 179,
+  "ts": 1760173339.730176,
+  "type": "merge.propose",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_priya",
+   "branch_ids": [
+    "br_007"
+   ],
+   "note": "I think this is the one worth backing."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 180,
+  "ts": 1760173341.030176,
+  "type": "merge.response",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_anselm",
+   "answer": "accept",
+   "text": "Fine, I'm in."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 181,
   "ts": 1760173343.2081978,
   "type": "agent.decision",
   "agent_id": "char_marg",
@@ -1549,7 +2527,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 104,
+  "seq": 182,
+  "ts": 1760173343.508198,
+  "type": "idea.share",
+  "agent_id": "char_marg",
+  "payload": {
+   "to": "char_tamsin",
+   "branch_id": "br_003",
+   "note": "Have a look at this one. It might surprise you."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 183,
+  "ts": 1760173344.808198,
+  "type": "idea.reaction",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "to": "char_marg",
+   "branch_id": "br_003",
+   "answer": "reject",
+   "text": "No. That's not what I'd build."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 184,
   "ts": 1760173346.809845,
   "type": "agent.decision",
   "agent_id": "char_tamsin",
@@ -1562,7 +2565,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 105,
+  "seq": 185,
   "ts": 1760173346.959845,
   "type": "unendorse",
   "agent_id": "char_tamsin",
@@ -1572,7 +2575,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 106,
+  "seq": 186,
   "ts": 1760173347.009845,
   "type": "endorse",
   "agent_id": "char_tamsin",
@@ -1582,7 +2585,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 107,
+  "seq": 187,
+  "ts": 1760173347.1098452,
+  "type": "idea.share",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_003",
+   "note": "Tell me where this goes wrong."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 188,
+  "ts": 1760173348.409845,
+  "type": "idea.reaction",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_tamsin",
+   "branch_id": "br_003",
+   "answer": "reject",
+   "text": "That sinks in the first storm."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 189,
   "ts": 1760173350.2594423,
   "type": "agent.decision",
   "agent_id": "char_dez",
@@ -1594,7 +2622,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 108,
+  "seq": 190,
   "ts": 1760173352.5617437,
   "type": "agent.decision",
   "agent_id": "char_marg",
@@ -1607,7 +2635,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 109,
+  "seq": 191,
+  "ts": 1760173352.8617437,
+  "type": "idea.share",
+  "agent_id": "char_marg",
+  "payload": {
+   "to": "char_ines",
+   "branch_id": "br_020",
+   "note": "I think this is the one worth backing."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 192,
+  "ts": 1760173354.1617439,
+  "type": "idea.reaction",
+  "agent_id": "char_ines",
+  "payload": {
+   "to": "char_marg",
+   "branch_id": "br_020",
+   "answer": "reject",
+   "text": "That sinks in the first storm."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 193,
   "ts": 1760173356.2147648,
   "type": "agent.decision",
   "agent_id": "char_marg",
@@ -1620,7 +2673,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 110,
+  "seq": 194,
+  "ts": 1760173356.5147648,
+  "type": "idea.pitch",
+  "agent_id": "char_marg",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_005",
+   "note": "I think this is the one worth backing."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 195,
+  "ts": 1760173357.8147647,
+  "type": "pitch.response",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_marg",
+   "branch_id": "br_005",
+   "persuaded": false,
+   "text": "That sinks in the first storm."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 196,
   "ts": 1760173359.312085,
   "type": "agent.decision",
   "agent_id": "char_dez",
@@ -1633,7 +2711,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 111,
+  "seq": 197,
   "ts": 1760173359.4620848,
   "type": "unendorse",
   "agent_id": "char_dez",
@@ -1643,7 +2721,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 112,
+  "seq": 198,
   "ts": 1760173359.5120847,
   "type": "endorse",
   "agent_id": "char_dez",
@@ -1653,7 +2731,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 113,
+  "seq": 199,
+  "ts": 1760173359.6120849,
+  "type": "idea.share",
+  "agent_id": "char_dez",
+  "payload": {
+   "to": "char_anselm",
+   "branch_id": "br_004",
+   "note": "Have a look at this one. It might surprise you."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 200,
+  "ts": 1760173360.9120848,
+  "type": "idea.reaction",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_dez",
+   "branch_id": "br_004",
+   "answer": "reject",
+   "text": "You lost me at the second line."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 201,
   "ts": 1760173362.365247,
   "type": "agent.decision",
   "agent_id": "char_dez",
@@ -1666,7 +2769,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 114,
+  "seq": 202,
   "ts": 1760173362.5152469,
   "type": "unendorse",
   "agent_id": "char_dez",
@@ -1676,7 +2779,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 115,
+  "seq": 203,
   "ts": 1760173362.5652468,
   "type": "endorse",
   "agent_id": "char_dez",
@@ -1686,7 +2789,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 116,
+  "seq": 204,
+  "ts": 1760173362.665247,
+  "type": "idea.share",
+  "agent_id": "char_dez",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_007",
+   "note": "Tell me where this goes wrong."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 205,
+  "ts": 1760173363.965247,
+  "type": "idea.reaction",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_dez",
+   "branch_id": "br_007",
+   "answer": "accept",
+   "text": "Fine, I'm in."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 206,
   "ts": 1760173364.4212344,
   "type": "agent.decision",
   "agent_id": "char_dez",
@@ -1699,7 +2827,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 117,
+  "seq": 207,
   "ts": 1760173364.5712345,
   "type": "unendorse",
   "agent_id": "char_dez",
@@ -1709,7 +2837,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 118,
+  "seq": 208,
   "ts": 1760173364.6212344,
   "type": "endorse",
   "agent_id": "char_dez",
@@ -1719,7 +2847,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 119,
+  "seq": 209,
+  "ts": 1760173364.7212343,
+  "type": "idea.share",
+  "agent_id": "char_dez",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_019",
+   "note": "You of all people should hear this."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 210,
+  "ts": 1760173366.0212343,
+  "type": "idea.reaction",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_dez",
+   "branch_id": "br_019",
+   "answer": "reject",
+   "text": "Absolutely not."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 211,
   "ts": 1760173367.073213,
   "type": "agent.decision",
   "agent_id": "char_priya",
@@ -1732,7 +2885,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 120,
+  "seq": 212,
   "ts": 1760173367.223213,
   "type": "unendorse",
   "agent_id": "char_priya",
@@ -1742,7 +2895,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 121,
+  "seq": 213,
   "ts": 1760173367.273213,
   "type": "endorse",
   "agent_id": "char_priya",
@@ -1752,7 +2905,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 122,
+  "seq": 214,
+  "ts": 1760173367.373213,
+  "type": "idea.share",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_tamsin",
+   "branch_id": "br_002",
+   "note": "You of all people should hear this."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 215,
+  "ts": 1760173368.673213,
+  "type": "idea.reaction",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_002",
+   "answer": "reject",
+   "text": "That sinks in the first storm."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 216,
   "ts": 1760173370.8932471,
   "type": "agent.decision",
   "agent_id": "char_ines",
@@ -1765,7 +2943,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 123,
+  "seq": 217,
   "ts": 1760173370.993247,
   "type": "branch.created",
   "agent_id": "char_ines",
@@ -1785,7 +2963,33 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 124,
+  "seq": 218,
+  "ts": 1760173371.193247,
+  "type": "merge.propose",
+  "agent_id": "char_ines",
+  "payload": {
+   "to": "char_anselm",
+   "branch_ids": [
+    "br_019"
+   ],
+   "note": "I think this is the one worth backing."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 219,
+  "ts": 1760173372.493247,
+  "type": "merge.response",
+  "agent_id": "char_anselm",
+  "payload": {
+   "to": "char_ines",
+   "answer": "accept",
+   "text": "Fine, I'm in."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 220,
   "ts": 1760173373.7345037,
   "type": "agent.decision",
   "agent_id": "char_priya",
@@ -1798,7 +3002,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 125,
+  "seq": 221,
   "ts": 1760173373.8845036,
   "type": "unendorse",
   "agent_id": "char_priya",
@@ -1808,7 +3012,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 126,
+  "seq": 222,
   "ts": 1760173373.9345036,
   "type": "endorse",
   "agent_id": "char_priya",
@@ -1818,7 +3022,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 127,
+  "seq": 223,
+  "ts": 1760173374.0345037,
+  "type": "idea.share",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_dez",
+   "branch_id": "br_017",
+   "note": "Tell me where this goes wrong."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 224,
+  "ts": 1760173375.3345037,
+  "type": "idea.reaction",
+  "agent_id": "char_dez",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_017",
+   "answer": "reject",
+   "text": "That sinks in the first storm."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 225,
   "ts": 1760173376.7555976,
   "type": "agent.decision",
   "agent_id": "char_marg",
@@ -1831,7 +3060,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 128,
+  "seq": 226,
+  "ts": 1760173377.0555978,
+  "type": "idea.share",
+  "agent_id": "char_marg",
+  "payload": {
+   "to": "char_tamsin",
+   "branch_id": "br_001",
+   "note": "Tell me where this goes wrong."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 227,
+  "ts": 1760173378.3555977,
+  "type": "idea.reaction",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "to": "char_marg",
+   "branch_id": "br_001",
+   "answer": "accept",
+   "text": "Yes. Finally, someone gets it."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 228,
   "ts": 1760173380.3076756,
   "type": "agent.decision",
   "agent_id": "char_dez",
@@ -1844,7 +3098,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 129,
+  "seq": 229,
   "ts": 1760173380.4576757,
   "type": "unendorse",
   "agent_id": "char_dez",
@@ -1854,7 +3108,7 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 130,
+  "seq": 230,
   "ts": 1760173380.5076756,
   "type": "endorse",
   "agent_id": "char_dez",
@@ -1864,7 +3118,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 131,
+  "seq": 231,
+  "ts": 1760173380.6076756,
+  "type": "idea.share",
+  "agent_id": "char_dez",
+  "payload": {
+   "to": "char_tamsin",
+   "branch_id": "br_020",
+   "note": "Tell me where this goes wrong."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 232,
+  "ts": 1760173381.9076755,
+  "type": "idea.reaction",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "to": "char_dez",
+   "branch_id": "br_020",
+   "answer": "reject",
+   "text": "No. That's not what I'd build."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 233,
   "ts": 1760173383.7580621,
   "type": "agent.decision",
   "agent_id": "char_priya",
@@ -1877,7 +3156,32 @@
  },
  {
   "run_id": "run_fixture",
-  "seq": 132,
+  "seq": 234,
+  "ts": 1760173384.058062,
+  "type": "idea.share",
+  "agent_id": "char_priya",
+  "payload": {
+   "to": "char_tamsin",
+   "branch_id": "br_017",
+   "note": "Tell me where this goes wrong."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 235,
+  "ts": 1760173385.358062,
+  "type": "idea.reaction",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "to": "char_priya",
+   "branch_id": "br_017",
+   "answer": "accept",
+   "text": "That works. I'll back it."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 236,
   "ts": 1760173386.5,
   "type": "run.ended",
   "agent_id": null,

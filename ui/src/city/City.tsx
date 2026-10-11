@@ -1,19 +1,20 @@
 import { Canvas, useThree } from "@react-three/fiber";
-import { Suspense, useLayoutEffect, useMemo } from "react";
+import { Suspense, useCallback, useLayoutEffect, useMemo, useState } from "react";
 import { Vector3 } from "three";
 import { shortName } from "../names";
 import type { Town } from "../town";
 import { Building } from "./Building";
 import { planCity, type CityPlan } from "./generate";
 import { BUILDING_HEIGHTS, TILE } from "./layout";
+import { HouseCards, HouseInspector, type Agreement, type CardItem, type HouseMessage } from "./HouseCards";
 import { Model } from "./Model";
-import { SpeechBubble } from "./SpeechBubble";
+import { TrafficCar } from "./TrafficCar";
 
 /** The tallest KayKit building, in world units, for fitting the camera. */
 const BUILDING_HEIGHT = 3.1;
 
 /** The isometric city. Each run gets its own town, and each lot gets its character's building. */
-export function City({ town }: { town: Town }) {
+export function City({ town, trafficPaused = false }: { town: Town; trafficPaused?: boolean }) {
   const plan = useMemo(() => planCity(town.runId ?? "town"), [town.runId]);
 
   // Characters are stored in birth order, dead ones included, so nobody's building ever changes.
@@ -22,8 +23,66 @@ export function City({ town }: { town: Town }) {
     return Object.fromEntries(ids.map((id, i) => [id, plan.buildingOrder[i % plan.buildingOrder.length]]));
   }, [town.characters, plan]);
 
+  // A card goes once it has faded.
+  const [faded, setFaded] = useState<ReadonlySet<string>>(new Set());
+  const fade = useCallback((key: string) => setFaded((set) => new Set(set).add(key)), []);
+  const [hoveredHouse, setHoveredHouse] = useState<string | null>(null);
+  const [selectedHouse, setSelectedHouse] = useState<string | null>(null);
+
+  /** Where a character's roof is, for letters to leave from. */
+  const roofOf = (id: string): [number, number, number] => {
+    const lot = plan.lots[town.characters[id].lot];
+    return [lot.position[0], (BUILDING_HEIGHTS[buildings[id]] ?? 3) + 0.2, lot.position[2]];
+  };
+
+  /** What each house shows: its own line, then the letters sent to it, oldest first. */
+  const cardsFor = (id: string): CardItem[] => {
+    const items: (CardItem & { seq: number })[] = [];
+    const speech = town.speech[id];
+    if (speech) {
+      const speaker = shortName(town.characters[id].persona.name);
+      items.push({ key: `say-${speech.seq}`, seq: speech.seq, speaker, text: speech.text, kind: speech.lastWords ? "last" : "said" });
+    }
+    for (const letter of town.interactions) {
+      if (letter.to !== id) continue;
+      const speaker = shortName(town.characters[letter.from].persona.name);
+      items.push({ key: `letter-${letter.seq}`, seq: letter.seq, speaker, text: letter.text, kind: letter.kind, from: roofOf(letter.from) });
+    }
+    return items.filter((item) => !faded.has(item.key)).sort((x, y) => x.seq - y.seq);
+  };
+
+  /** A positive reply belongs to both neighbors, so its celebration appears over both roofs. */
+  const agreementsFor = (id: string): Agreement[] =>
+    town.interactions
+      .filter((item) => item.kind === "agree" && (item.from === id || item.to === id))
+      .map((item) => ({ key: `agreement-${item.seq}` }));
+
+  /** Recent letters involving this home, newest first and split by direction in the inspector. */
+  const messagesFor = (id: string): HouseMessage[] =>
+    town.interactions
+      .filter((message) => message.from === id || message.to === id)
+      .sort((a, b) => b.seq - a.seq)
+      .map((message) => {
+        const outgoing = message.from === id;
+        const peerId = outgoing ? message.to : message.from;
+        return {
+          key: `message-${message.seq}`,
+          direction: outgoing ? "outgoing" : "incoming",
+          peer: shortName(town.characters[peerId].persona.name),
+          text: message.text,
+        };
+      });
+
   return (
-    <Canvas orthographic shadows="percentage" flat dpr={[1, 2]} camera={{ near: 0.1, far: 200 }}>
+    <Canvas
+      orthographic
+      shadows="percentage"
+      flat
+      dpr={[1, 2]}
+      camera={{ near: 0.1, far: 200 }}
+      style={{ cursor: hoveredHouse ? "pointer" : "auto" }}
+      onPointerMissed={() => setSelectedHouse(null)}
+    >
       <IsometricCamera plan={plan} />
       <hemisphereLight args={["#ffffff", "#9aa3ad", 1.6]} />
       <directionalLight
@@ -42,10 +101,21 @@ export function City({ town }: { town: Town }) {
           {plan.scenery.map((piece, i) => (
             <Model key={i} name={piece.model} position={piece.position} rotation={[0, piece.rotation, 0]} />
           ))}
+          {plan.traffic.map((route, i) => (
+            <TrafficCar key={`${route.model}-${i}`} route={route} paused={trafficPaused} />
+          ))}
           {plan.lots.map((lot, i) => {
             const id = town.lots[i];
             return id ? (
-              <Building key={id} model={buildings[id]} lot={lot} />
+              <Building
+                key={id}
+                model={buildings[id]}
+                lot={lot}
+                selected={selectedHouse === id}
+                onHover={() => setHoveredHouse(id)}
+                onLeave={() => setHoveredHouse((current) => (current === id ? null : current))}
+                onSelect={() => setSelectedHouse(id)}
+              />
             ) : (
               <Model key={`empty-${i}`} name={lot.model} position={lot.position} />
             );
@@ -53,20 +123,30 @@ export function City({ town }: { town: Town }) {
         </Suspense>
         {plan.lots.map((lot, i) => {
           const id = town.lots[i];
-          const speech = id ? town.speech[id] : undefined;
-          if (!id || !speech) return null;
-          // Neighbors' bubbles sit at slightly different heights so they overlap less.
-          const height = (BUILDING_HEIGHTS[buildings[id]] ?? 3) + 0.35 + (i % 2) * 0.6;
+          if (!id) return null;
           return (
-            <SpeechBubble
-              key={`${id}-${speech.seq}`}
-              position={[lot.position[0], height, lot.position[2]]}
-              speaker={shortName(town.characters[id].persona.name)}
-              text={speech.text}
-              lastWords={speech.lastWords}
+            <HouseCards
+              key={id}
+              position={[lot.position[0], (BUILDING_HEIGHTS[buildings[id]] ?? 3) + 0.35, lot.position[2]]}
+              items={cardsFor(id)}
+              agreements={agreementsFor(id)}
+              onDone={fade}
             />
           );
         })}
+        {selectedHouse && (
+          <HouseInspector
+            position={roofOf(selectedHouse)}
+            persona={town.characters[selectedHouse].persona}
+            alive={town.characters[selectedHouse].alive}
+            bornSeq={town.characters[selectedHouse].bornSeq}
+            diedSeq={town.characters[selectedHouse].diedSeq}
+            currentSeq={town.lastSeq}
+            latestThought={town.speech[selectedHouse]?.text}
+            messages={messagesFor(selectedHouse)}
+            onClose={() => setSelectedHouse(null)}
+          />
+        )}
       </group>
     </Canvas>
   );

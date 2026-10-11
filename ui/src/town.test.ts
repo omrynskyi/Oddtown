@@ -63,6 +63,15 @@ describe("town reducer", () => {
     expect(townReducer(ended, { kind: "event", event: replayedCreate }).phase).toBe("ended");
   });
 
+  it("rebuilds a saved run at any point on its event timeline", () => {
+    const midway = upTo("run.started");
+    const replayed = townReducer(initialTown, { kind: "replay", runId: RUN, seed: null, events: midway });
+    expect(replayed.phase).toBe("running");
+    expect(replayed.lastSeq).toBe(midway.at(-1)!.seq);
+    expect(replayed.lots.filter(Boolean)).toHaveLength(6);
+    expect(townReducer(initialTown, { kind: "replay", runId: RUN, seed: null, events }).phase).toBe("ended");
+  });
+
   it("keeps each character's latest line, including its last words", () => {
     const decisions = events.filter((e) => e.type === "agent.decision");
     const firstSpeaker = decisions[0].agent_id!;
@@ -118,9 +127,63 @@ describe("town reducer", () => {
 
   it("ignores event types the UI doesn't use", () => {
     const town = play(upTo("run.ready"));
-    const share = { run_id: RUN, seq: town.lastSeq + 1, ts: 0, type: "idea.share", agent_id: "char_dez", payload: {} };
+    const share = { run_id: RUN, seq: town.lastSeq + 1, ts: 0, type: "human.request", agent_id: "char_dez", payload: {} };
     const next = townReducer(town, { kind: "event", event: share });
     expect({ ...next, lastSeq: town.lastSeq }).toEqual(town);
     expect(next.lastSeq).toBe(town.lastSeq + 1);
+  });
+
+  describe("letters between houses", () => {
+    const base = play(upTo("run.started"));
+    const send = (type: string, agent: string, payload: Record<string, unknown>, from = base) =>
+      townReducer(from, { kind: "event", event: { run_id: RUN, seq: from.lastSeq + 1, ts: 0, type, agent_id: agent, payload } });
+
+    it("makes a letter of each message, carrying the note", () => {
+      for (const type of ["idea.share", "idea.pitch", "merge.propose"]) {
+        const town = send(type, "char_dez", { to: "char_marg", note: " Look at this " });
+        expect(town.interactions).toEqual([{ seq: base.lastSeq + 1, from: "char_dez", to: "char_marg", kind: "letter", text: "Look at this" }]);
+      }
+    });
+
+    it("reads each reply as agree, disagree or mixed", () => {
+      const kind = (type: string, payload: Record<string, unknown>) => send(type, "char_marg", { to: "char_dez", ...payload }).interactions[0].kind;
+      expect(kind("idea.reaction", { answer: "accept" })).toBe("agree");
+      expect(kind("idea.reaction", { answer: "reject" })).toBe("disagree");
+      expect(kind("pitch.response", { persuaded: true })).toBe("agree");
+      expect(kind("pitch.response", { persuaded: false })).toBe("disagree");
+      expect(kind("merge.response", { answer: "accept" })).toBe("agree");
+      expect(kind("merge.response", { answer: "reject" })).toBe("disagree");
+      expect(kind("merge.response", { answer: "counter" })).toBe("mixed");
+    });
+
+    it("ignores letters to or from people who aren't in town, or to yourself", () => {
+      expect(send("idea.share", "char_dez", { to: "char_nobody" }).interactions).toEqual([]);
+      expect(send("idea.share", "char_nobody", { to: "char_dez" }).interactions).toEqual([]);
+      expect(send("idea.share", "char_dez", { to: "char_dez" }).interactions).toEqual([]);
+      expect(send("idea.share", "char_dez", {}).interactions).toEqual([]);
+    });
+
+    it("keeps only the latest few, and none from the dead after they leave", () => {
+      const town = play(events);
+      expect(town.interactions.length).toBeGreaterThan(0);
+      expect(town.interactions.length).toBeLessThanOrEqual(8);
+      const seqs = town.interactions.map((i) => i.seq);
+      expect(seqs).toEqual([...seqs].sort((a, b) => a - b));
+      const died = events.find((e) => e.type === "agent.died")!.agent_id!;
+      const afterDeath = send("idea.share", "char_dez", { to: died }, town);
+      expect(afterDeath.interactions).toEqual(town.interactions);
+    });
+
+    it("sees the mock run's agreement and disagreement", () => {
+      const kinds = new Set<string>();
+      events.reduce((t, event) => {
+        const next = townReducer(t, { kind: "event", event });
+        next.interactions.forEach((i) => kinds.add(i.kind));
+        return next;
+      }, townReducer(initialTown, { kind: "submitted", runId: RUN, seed: "a coffee subscription" }));
+      expect(kinds).toContain("letter");
+      expect(kinds).toContain("agree");
+      expect(kinds).toContain("disagree");
+    });
   });
 });

@@ -69,6 +69,14 @@ export type BranchCreated = Envelope<
     text: string;
   }
 >;
+/** A message from one character to another. `agent_id` is the sender and `to` is the recipient. */
+export type IdeaShare = Envelope<"idea.share", { to: string; note?: string }>;
+export type IdeaPitch = Envelope<"idea.pitch", { to: string; note?: string }>;
+export type MergePropose = Envelope<"merge.propose", { to: string; note?: string }>;
+/** Replies. `agent_id` is the character answering and `to` is whoever asked. */
+export type IdeaReaction = Envelope<"idea.reaction", { to: string; answer: "accept" | "reject"; text?: string }>;
+export type PitchResponse = Envelope<"pitch.response", { to: string; persuaded: boolean; text?: string }>;
+export type MergeResponse = Envelope<"merge.response", { to: string; answer: "accept" | "reject" | "counter"; text?: string }>;
 export type Endorse = Envelope<"endorse", { branch_id: string }>;
 export type Unendorse = Envelope<"unendorse", { branch_id: string }>;
 export type WorldEvent = Envelope<"world.event", { kind: "seed" | "constraint" | "feedback"; text: string }>;
@@ -84,6 +92,12 @@ export type KnownEvent =
   | RunStarted
   | AgentDecision
   | BranchCreated
+  | IdeaShare
+  | IdeaPitch
+  | MergePropose
+  | IdeaReaction
+  | PitchResponse
+  | MergeResponse
   | Endorse
   | Unendorse
   | WorldEvent
@@ -101,6 +115,12 @@ const KNOWN_TYPES = new Set<string>([
   "run.started",
   "agent.decision",
   "branch.created",
+  "idea.share",
+  "idea.pitch",
+  "merge.propose",
+  "idea.reaction",
+  "pitch.response",
+  "merge.response",
   "endorse",
   "unendorse",
   "world.event",

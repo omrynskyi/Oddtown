@@ -13,6 +13,10 @@ export interface Character {
   persona: Persona;
   alive: boolean;
   lot: number;
+  /** Event when this resident moved into town, used for their town lifespan. */
+  bornSeq?: number;
+  /** Event when the resident left town, if they have. */
+  diedSeq?: number;
 }
 
 /** The last thing a character said. `seq` changes with every new line, so the bubble can restart. */
@@ -32,6 +36,22 @@ export interface Branch {
   seq: number;
 }
 
+/**
+ * A message between two characters, drawn as a letter flying from one house to the other.
+ * A reply is a letter back, marked by how the character answered.
+ */
+export interface Interaction {
+  /** The seq of the event it came from, which is unique, so it can key the letter. */
+  seq: number;
+  from: string;
+  to: string;
+  kind: "letter" | "agree" | "disagree" | "mixed";
+  text: string;
+}
+
+/** Only the latest few are kept, since each letter is gone from the screen in a few seconds. */
+const MAX_INTERACTIONS = 8;
+
 export interface Town {
   runId: string | null;
   seed: string | null;
@@ -41,6 +61,8 @@ export interface Town {
   lots: (string | null)[];
   /** Each character's latest line, shown in a speech bubble above its house. */
   speech: Record<string, Speech>;
+  /** The latest letters between houses, oldest first. */
+  interactions: Interaction[];
   /** Every version of the idea, in the order they were made. */
   branches: Record<string, Branch>;
   /** The branches each character currently backs. */
@@ -55,6 +77,7 @@ export const initialTown: Town = {
   characters: {},
   lots: Array(LOT_COUNT).fill(null),
   speech: {},
+  interactions: [],
   branches: {},
   endorsements: {},
   lastSeq: 0,
@@ -62,6 +85,7 @@ export const initialTown: Town = {
 
 export type TownAction =
   | { kind: "submitted"; runId: string; seed: string }
+  | { kind: "replay"; runId: string; seed: string | null; events: AnyEvent[] }
   | { kind: "event"; event: AnyEvent }
   | { kind: "reset" };
 
@@ -69,6 +93,11 @@ export function townReducer(town: Town, action: TownAction): Town {
   switch (action.kind) {
     case "submitted":
       return { ...initialTown, runId: action.runId, seed: action.seed, phase: "loading" };
+    case "replay":
+      return action.events.reduce<Town>(
+        (state, event) => townReducer(state, { kind: "event", event }),
+        { ...initialTown, runId: action.runId, seed: action.seed, phase: "loading" },
+      );
     case "reset":
       return initialTown;
     case "event": {
@@ -91,7 +120,7 @@ function applyEvent(town: Town, event: AnyEvent): Town {
     case "run.created":
       return advance({ ...town, seed: event.payload.seed }, "loading");
     case "agent.born":
-      return moveIn(town, event.payload.persona);
+      return moveIn(town, event.payload.persona, event.seq);
     case "run.ready":
       return advance(town, "ready");
     case "run.started":
@@ -106,6 +135,18 @@ function applyEvent(town: Town, event: AnyEvent): Town {
       const branch: Branch = { id: branch_id, parentIds: parent_ids, op, authors, text, seq: event.seq };
       return { ...town, branches: { ...town.branches, [branch_id]: branch } };
     }
+    case "idea.share":
+    case "idea.pitch":
+    case "merge.propose":
+      return interact(town, event.seq, event.agent_id, event.payload.to, "letter", event.payload.note);
+    case "idea.reaction":
+      return interact(town, event.seq, event.agent_id, event.payload.to, event.payload.answer === "accept" ? "agree" : "disagree", event.payload.text);
+    case "pitch.response":
+      return interact(town, event.seq, event.agent_id, event.payload.to, event.payload.persuaded ? "agree" : "disagree", event.payload.text);
+    case "merge.response": {
+      const { answer, text } = event.payload;
+      return interact(town, event.seq, event.agent_id, event.payload.to, answer === "accept" ? "agree" : answer === "reject" ? "disagree" : "mixed", text);
+    }
     case "endorse":
     case "unendorse": {
       const id = event.agent_id;
@@ -118,7 +159,7 @@ function applyEvent(town: Town, event: AnyEvent): Town {
       const id = event.agent_id;
       const character = id ? town.characters[id] : undefined;
       if (!id || !character) return town;
-      return { ...town, characters: { ...town.characters, [id]: { ...character, alive: false } } };
+      return { ...town, characters: { ...town.characters, [id]: { ...character, alive: false, diedSeq: event.seq } } };
     }
     case "run.ended":
       return advance(town, "ended");
@@ -132,8 +173,16 @@ function say(town: Town, id: string | null, text: string, seq: number, lastWords
   return { ...town, speech: { ...town.speech, [id]: { text, seq, lastWords } } };
 }
 
+/** Adds a letter between two characters who are both living in town. */
+function interact(town: Town, seq: number, from: string | null, to: string, kind: Interaction["kind"], text = ""): Town {
+  const home = (id: string | null) => (id ? town.lots[town.characters[id]?.lot ?? -1] === id : false);
+  if (!from || from === to || !home(from) || !home(to)) return town;
+  const letter: Interaction = { seq, from, to, kind, text: text.trim() };
+  return { ...town, interactions: [...town.interactions, letter].slice(-MAX_INTERACTIONS) };
+}
+
 /** A newcomer takes the lot of the character it replaces, otherwise the first empty lot. */
-function moveIn(town: Town, persona: Persona): Town {
+function moveIn(town: Town, persona: Persona, bornSeq: number): Town {
   if (town.characters[persona.id]) return town;
   const replaces = persona.lineage?.replaces;
   const replacedLot = replaces ? town.characters[replaces]?.lot : undefined;
@@ -141,7 +190,7 @@ function moveIn(town: Town, persona: Persona): Town {
   if (lot === -1) return town;
   const lots = [...town.lots];
   lots[lot] = persona.id;
-  return { ...town, lots, characters: { ...town.characters, [persona.id]: { persona, alive: true, lot } } };
+  return { ...town, lots, characters: { ...town.characters, [persona.id]: { persona, alive: true, lot, bornSeq } } };
 }
 
 /** Who backs each branch, counting only characters who are still alive. */
