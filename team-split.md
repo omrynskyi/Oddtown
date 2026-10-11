@@ -87,7 +87,7 @@ Person 3's goal is that judges can see every beat of the demo script on screen, 
 | 8.5 to 10 | Polish, and recording the demo with Person 1 | **Gate 10** |
 | 10 to 12 | Build the slides, and assemble and submit | **Gate 12** |
 
-Person 3 owns one fallback. If live integration slips past hour 8, the demo runs from a replay of the recorded JSONL log.
+Person 3 owns one fallback. If live integration slips past hour 8, the demo replays the recorded run from the observer's SQLite database.
 
 ## Handoffs
 

@@ -19,7 +19,7 @@ These hold for every phase, so no phase has to re-decide them.
 | --- | --- |
 | Observer | Python 3.12, FastAPI, SQLite from the standard library, one uvicorn worker on port 8100 |
 | Mock world service | A separate small FastAPI app on port 8200 with the same endpoints Clara's world service will have, so switching to the real one only changes a URL |
-| Python environment | `.venv` at the repo root made with uv, using the same package versions as `requirements.txt` |
+| Python environment | `.venv` at the repo root: `uv venv --python 3.12 .venv`, then `uv pip install --python .venv/bin/python fastapi==0.143.0 'uvicorn[standard]==0.54.0' pydantic==2.14.0 pytest httpx2`. Tests run with `.venv/bin/python -m pytest observer` |
 | UI | Vite, React and TypeScript on port 5173, with three.js through react-three-fiber and drei, and d3 for the tree |
 | UI state | One reducer that turns events into town state, fed by one WebSocket. The reducer has unit tests |
 | Models | The KayKit glTF files already in `ui/public/models/` |
