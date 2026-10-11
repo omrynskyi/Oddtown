@@ -11,11 +11,15 @@
   "dependencies": {
     "@react-three/drei": "^10.7.9",
     "@react-three/fiber": "^9.8.1",
+    "d3-hierarchy": "^3.1.2",
+    "d3-shape": "^3.2.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "three": "^0.186.1"
   },
   "devDependencies": {
+    "@types/d3-hierarchy": "^3.1.7",
+    "@types/d3-shape": "^3.2.0",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/three": "^0.186.0",

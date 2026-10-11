@@ -1,12 +1,17 @@
+import { useState } from "react";
 import { AskScreen } from "./AskScreen";
 import { City } from "./city/City";
 import { ReadyPanel } from "./ReadyPanel";
+import { TabSwitcher, type View } from "./TabSwitcher";
 import { LOT_COUNT } from "./town";
+import { TreeView } from "./tree/TreeView";
 import { useRun } from "./useRun";
 
 export function App() {
   const { town, connection, submit, start } = useRun();
   const residents = town.lots.flatMap((id) => (id ? [town.characters[id].persona] : []));
+  const [view, setView] = useState<View>("city");
+  const started = town.phase === "running" || town.phase === "ended";
 
   return (
     <div className="app">
@@ -44,6 +49,9 @@ export function App() {
             </div>
           </div>
           {town.phase === "ready" && <ReadyPanel residents={residents} onStart={start} />}
+          {/* The tree covers the city instead of replacing it, so the city keeps running underneath. */}
+          {started && view === "tree" && <TreeView town={town} />}
+          {started && <TabSwitcher view={view} onChange={setView} />}
         </main>
       )}
     </div>

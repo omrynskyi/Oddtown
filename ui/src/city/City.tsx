@@ -1,6 +1,7 @@
 import { Canvas, useThree } from "@react-three/fiber";
 import { Suspense, useLayoutEffect, useMemo } from "react";
 import { Vector3 } from "three";
+import { shortName } from "../names";
 import type { Town } from "../town";
 import { Building } from "./Building";
 import { planCity, type CityPlan } from "./generate";
@@ -60,7 +61,7 @@ export function City({ town }: { town: Town }) {
             <SpeechBubble
               key={`${id}-${speech.seq}`}
               position={[lot.position[0], height, lot.position[2]]}
-              speaker={town.characters[id].persona.name.split(" ")[0]}
+              speaker={shortName(town.characters[id].persona.name)}
               text={speech.text}
               lastWords={speech.lastWords}
             />

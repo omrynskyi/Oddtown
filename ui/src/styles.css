@@ -49,6 +49,8 @@ body {
 .wordmark {
   position: relative;
   z-index: 2;
+  /* Only as wide as the word, so it never covers the switcher or the city. */
+  width: fit-content;
   padding: 20px 28px;
   font-size: 28px;
   font-weight: 800;
@@ -428,9 +430,163 @@ body {
   background: var(--taxi);
 }
 
+/* The floating City and Tree switch. */
+
+.tabs {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  z-index: 40;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--kerb);
+  border: var(--outline);
+  border-radius: 999px;
+  box-shadow: 0 4px 0 var(--asphalt);
+  transform: translateX(-50%);
+}
+
+.tab {
+  padding: 6px 20px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--asphalt-soft);
+  font: 700 17px / 1.2 var(--font);
+  cursor: pointer;
+}
+
+.tab[aria-pressed="true"] {
+  background: var(--taxi);
+  color: var(--asphalt);
+}
+
+.tab:focus-visible {
+  outline: 3px solid var(--asphalt);
+  outline-offset: 1px;
+}
+
+/* Tree: how the idea grew, laid out left to right from the seed. */
+
+.tree-view {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  background: var(--sky);
+}
+
+.tree-header {
+  flex: none;
+  padding: 72px 16px 16px;
+  text-align: center;
+}
+
+.tree-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 8px 32px 32px;
+}
+
+.tree-canvas {
+  position: relative;
+  margin: 0 auto;
+}
+
+.tree-links {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.tree-link {
+  fill: none;
+  stroke: var(--asphalt);
+  stroke-width: 2.5;
+}
+
+.tree-link-merge {
+  stroke-dasharray: 6 6;
+}
+
+.tree-node {
+  position: absolute;
+  padding: 8px 12px;
+  overflow: hidden;
+  background: var(--kerb);
+  border: 2px solid var(--asphalt);
+  border-radius: 14px;
+  box-shadow: 0 3px 0 var(--asphalt);
+  animation: node-in 300ms ease-out both;
+}
+
+@keyframes node-in {
+  from {
+    opacity: 0;
+    scale: 0.85;
+  }
+}
+
+/* More living backers, warmer node. */
+.tree-node[data-support="1"] {
+  background: #fdf0c6;
+}
+
+.tree-node[data-support="2"] {
+  background: #f9db7e;
+}
+
+.tree-node[data-support="3"] {
+  background: var(--taxi);
+}
+
+.tree-node-meta {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 3px;
+  overflow: hidden;
+  color: var(--asphalt-soft);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tree-node-op {
+  color: var(--asphalt);
+  font-weight: 800;
+}
+
+.tree-node-support {
+  margin-left: auto;
+  color: var(--asphalt);
+  font-weight: 700;
+}
+
+.tree-node-text {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
 @media (max-width: 560px) {
   .wordmark {
     padding: 16px;
+  }
+
+  /* No room to center it next to the wordmark, so it moves to the right. */
+  .tabs {
+    top: 10px;
+    left: auto;
+    right: 12px;
+    transform: none;
   }
 
   .ask-bubble {
@@ -460,6 +616,10 @@ body {
 
   .bubble {
     animation-name: bubble-fade;
+  }
+
+  .tree-node {
+    animation: none;
   }
 }
 

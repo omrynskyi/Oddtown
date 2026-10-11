@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AnyEvent } from "./events";
 import mockRun from "./fixtures/mock-run.json";
-import { initialTown, townReducer, type Town } from "./town";
+import { initialTown, livingSupport, townReducer, type Town } from "./town";
 
 // The fixture is a full scripted run from the mock world service.
 // Regenerate it with: .venv/bin/python -m observer.mock_script > ui/src/fixtures/mock-run.json
@@ -81,6 +81,39 @@ describe("town reducer", () => {
     const town = play(upTo("run.started"));
     const stranger = { run_id: RUN, seq: town.lastSeq + 1, ts: 0, type: "agent.decision", agent_id: "char_nobody", payload: { action: "twist", say: "Hi", reason: "" } };
     expect(townReducer(town, { kind: "event", event: stranger }).speech).toEqual({});
+  });
+
+  it("collects every branch, with its parents and authors", () => {
+    const town = play(events);
+    const created = events.filter((e) => e.type === "branch.created");
+    expect(Object.keys(town.branches)).toEqual(created.map((e) => e.payload.branch_id));
+    const merge = created.find((e) => e.payload.op === "merge")!;
+    expect(town.branches[merge.payload.branch_id as string]).toMatchObject({
+      op: "merge",
+      parentIds: merge.payload.parent_ids,
+      authors: merge.payload.authors,
+    });
+  });
+
+  it("counts support from living backers only, after every endorse and unendorse", () => {
+    const town = play(events);
+    // Replay the endorsements by hand to get each character's final picks.
+    const backed: Record<string, Set<string>> = {};
+    for (const e of events) {
+      if (e.type === "endorse") (backed[e.agent_id!] ??= new Set()).add(e.payload.branch_id as string);
+      if (e.type === "unendorse") backed[e.agent_id!].delete(e.payload.branch_id as string);
+    }
+    const dead = events.find((e) => e.type === "agent.died")!.agent_id!;
+    const expected: Record<string, string[]> = {};
+    for (const [id, set] of Object.entries(backed)) {
+      if (id === dead) continue;
+      for (const b of set) (expected[b] ??= []).push(id);
+    }
+    const support = livingSupport(town);
+    for (const b of new Set([...Object.keys(expected), ...Object.keys(support)])) {
+      expect([...(support[b] ?? [])].sort()).toEqual([...(expected[b] ?? [])].sort());
+    }
+    expect(Object.values(town.endorsements).every((list) => list.length <= 2)).toBe(true);
   });
 
   it("ignores event types the UI doesn't use", () => {

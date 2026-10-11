@@ -22,6 +22,16 @@ export interface Speech {
   lastWords: boolean;
 }
 
+/** One version of the idea. Twists have one parent, merges have two. */
+export interface Branch {
+  id: string;
+  parentIds: string[];
+  op: "seed" | "twist" | "merge";
+  authors: string[];
+  text: string;
+  seq: number;
+}
+
 export interface Town {
   runId: string | null;
   seed: string | null;
@@ -31,6 +41,10 @@ export interface Town {
   lots: (string | null)[];
   /** Each character's latest line, shown in a speech bubble above its house. */
   speech: Record<string, Speech>;
+  /** Every version of the idea, in the order they were made. */
+  branches: Record<string, Branch>;
+  /** The branches each character currently backs. */
+  endorsements: Record<string, string[]>;
   lastSeq: number;
 }
 
@@ -41,6 +55,8 @@ export const initialTown: Town = {
   characters: {},
   lots: Array(LOT_COUNT).fill(null),
   speech: {},
+  branches: {},
+  endorsements: {},
   lastSeq: 0,
 };
 
@@ -84,6 +100,20 @@ function applyEvent(town: Town, event: AnyEvent): Town {
       return say(town, event.agent_id, event.payload.say, event.seq, false);
     case "agent.last_words":
       return say(town, event.agent_id, event.payload.text, event.seq, true);
+    case "branch.created": {
+      const { branch_id, parent_ids, op, authors, text } = event.payload;
+      if (town.branches[branch_id]) return town;
+      const branch: Branch = { id: branch_id, parentIds: parent_ids, op, authors, text, seq: event.seq };
+      return { ...town, branches: { ...town.branches, [branch_id]: branch } };
+    }
+    case "endorse":
+    case "unendorse": {
+      const id = event.agent_id;
+      if (!id) return town;
+      const backed = (town.endorsements[id] ?? []).filter((b) => b !== event.payload.branch_id);
+      if (event.type === "endorse") backed.push(event.payload.branch_id);
+      return { ...town, endorsements: { ...town.endorsements, [id]: backed } };
+    }
     case "agent.died": {
       const id = event.agent_id;
       const character = id ? town.characters[id] : undefined;
@@ -112,4 +142,14 @@ function moveIn(town: Town, persona: Persona): Town {
   const lots = [...town.lots];
   lots[lot] = persona.id;
   return { ...town, lots, characters: { ...town.characters, [persona.id]: { persona, alive: true, lot } } };
+}
+
+/** Who backs each branch, counting only characters who are still alive. */
+export function livingSupport(town: Town): Record<string, string[]> {
+  const support: Record<string, string[]> = {};
+  for (const [id, branches] of Object.entries(town.endorsements)) {
+    if (!town.characters[id]?.alive) continue;
+    for (const branch of branches) (support[branch] ??= []).push(id);
+  }
+  return support;
 }
