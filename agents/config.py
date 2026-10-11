@@ -60,6 +60,10 @@ MAX_BRANCHES_IN_PROMPT = 12
 # Stopping: broadcast rest once no branch has gained or lost a living backer for this long
 REST_AFTER_S = _float("ODDTOWN_REST_AFTER_S", 120.0)
 
+# Proposals and the branch budget, worked out from public state so every character agrees
+QUORUM = 2  # living backers, besides its own authors, that make a branch a proposal
+BRANCH_BUDGET = 3  # unbacked branches of your own you keep. A new one past this retires the oldest
+
 # Replacement design
 DESIGN_TIMEOUT_S = 90.0  # a refiner takes over if the designer before it goes quiet and dies
 
@@ -119,7 +123,12 @@ def allowed_models() -> list[str]:
 #   design     replacement designers see the names already used and the emptiest corner of trait space
 #   rules      the rewritten rules; off brings back the original ones
 #   think      the decision writes its reasoning before it picks an action
-FEATURES = ("social", "relevance", "threads", "build", "credit", "reflect", "design", "rules", "think")
+#   quorum     a branch backed by QUORUM living characters besides its authors is a proposal, listed first
+#   compost    an author withdraws a branch everyone it showed it to turned down, and its unbacked ones when it dies
+#   budget     past BRANCH_BUDGET unbacked branches of its own, a character retires its oldest (branch.withdraw)
+FEATURES = (
+    "social", "relevance", "threads", "build", "credit", "reflect", "design", "rules", "think", "quorum", "compost", "budget",
+)
 
 
 def on(feature: str) -> bool:

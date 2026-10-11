@@ -13,6 +13,7 @@ export const FEED_ICONS: Record<FeedItem["kind"], string> = {
   birth: "🏠",
   death: "🪦",
   lead: "👑",
+  proposal: "🌟",
   rest: "😴",
   end: "🏁",
   summary: "📜",

@@ -964,7 +964,7 @@ body {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 8px 32px 32px;
+  padding: 20px 32px 32px; /* room for a proposal's badge and glow on the top row */
 }
 
 .tree-canvas {
@@ -1002,13 +1002,23 @@ body {
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: opacity 200ms ease;
+  transition:
+    opacity 200ms ease,
+    filter 200ms ease;
   animation: node-in 300ms ease-out both;
 }
 
 .tree-node[aria-pressed="true"] {
   outline: 4px solid var(--asphalt);
   outline-offset: 3px;
+}
+
+/* Composted: its author withdrew it, often because nobody liked it, and nobody backs it. */
+.tree-node[data-composted] {
+  border-style: dashed;
+  box-shadow: none;
+  opacity: 0.45;
+  filter: grayscale(1);
 }
 
 /* Outside the highlighted theme. */
@@ -1034,6 +1044,43 @@ body {
 
 .tree-node[data-support="3"] {
   background: var(--taxi);
+}
+
+/* Backed by enough characters besides its authors to be a real contender. */
+.tree-node[data-proposal] {
+  overflow: visible;
+  box-shadow:
+    0 3px 0 var(--asphalt),
+    0 0 0 4px var(--taxi),
+    0 0 26px 8px rgb(246 195 67 / 0.7);
+  animation:
+    node-in 300ms ease-out both,
+    proposal-glow 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes proposal-glow {
+  to {
+    box-shadow:
+      0 3px 0 var(--asphalt),
+      0 0 0 4px var(--taxi),
+      0 0 12px 2px rgb(246 195 67 / 0.45);
+  }
+}
+
+.tree-node-badge {
+  position: absolute;
+  top: -13px;
+  right: 12px;
+  padding: 0 9px;
+  background: var(--taxi);
+  border: 2px solid var(--asphalt);
+  border-radius: 999px;
+  color: var(--asphalt);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 20px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .tree-node-meta {
@@ -2029,7 +2076,8 @@ button.news-row:hover {
     animation: none;
   }
 
-  .tree-node {
+  .tree-node,
+  .tree-node[data-proposal] {
     animation: none;
   }
 

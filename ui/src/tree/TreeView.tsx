@@ -1,7 +1,7 @@
 import { linkHorizontal } from "d3-shape";
 import { useEffect, useMemo, useRef } from "react";
 import { shortName } from "../names";
-import { livingSupport, type Town } from "../town";
+import { isComposted, isProposal, livingSupport, type Town } from "../town";
 import { layoutTree, NODE_HEIGHT, NODE_WIDTH, type PlacedLink } from "./layout";
 
 const OP_LABELS = { seed: "Your idea", twist: "Twist", merge: "Merge" } as const;
@@ -16,7 +16,10 @@ export interface TreeHighlight {
   ids: string[];
 }
 
-/** How the idea grew: every twist and merge, colored by how many living characters back it. */
+/**
+ * How the idea grew: every twist and merge, colored by how many living characters back it.
+ * Proposals glow with a badge, and composted branches fade.
+ */
 export function TreeView({
   town,
   selectedId,
@@ -69,6 +72,9 @@ export function TreeView({
             if (!branch) return null;
             const backers = support[id] ?? [];
             const authors = branch.op === "seed" ? "" : branch.authors.map(nameOf).join(" + ");
+            const proposal = isProposal(town, id, support);
+            const composted = isComposted(town, id, support);
+            const status = proposal ? ", a proposal" : composted ? ", composted" : "";
             return (
               <button
                 key={id}
@@ -76,12 +82,19 @@ export function TreeView({
                 className="tree-node"
                 data-support={Math.min(backers.length, 3)}
                 data-dim={lit ? !lit.has(id) : undefined}
+                data-proposal={proposal || undefined}
+                data-composted={composted || undefined}
                 aria-pressed={selectedId === id}
                 style={{ left, top, width: NODE_WIDTH, height: NODE_HEIGHT }}
                 title={branch.text}
-                aria-label={`${OP_LABELS[branch.op]}: ${branch.text}`}
+                aria-label={`${OP_LABELS[branch.op]}${status}: ${branch.text}`}
                 onClick={() => onSelect(id)}
               >
+                {proposal && (
+                  <span className="tree-node-badge" aria-hidden="true">
+                    Proposal
+                  </span>
+                )}
                 <span className="tree-node-meta">
                   <span className="tree-node-op">{OP_LABELS[branch.op]}</span>
                   {authors && <span> by {authors}</span>}

@@ -11,6 +11,10 @@ world/launcher.py), joins the town through transport.town.Town, and then:
   its actions or its wall-clock time run out. Dying means last words, three
   random survivors picked to design the replacement, `agent.died`, then leave.
 - Designs replacements when picked: propose, refine, or refine and birth.
+- Withdraws its own branches that nobody liked: once everyone it showed one to
+  has turned it down and nobody backs it, a `branch.withdraw` broadcast makes
+  every character compost it. It does the same past BRANCH_BUDGET unbacked
+  branches (the oldest go), and for its unbacked branches when it dies.
 - Notices crashes. If its message to a peer bounces, it does that peer's
   replacement pick, since the peer never got to.
 - Reports every LLM call's tokens to the world service (`usage.report`) and to
@@ -44,7 +48,7 @@ from agents.social import Ledger, quote
 from agents.messages import (
     AGENT_HELLO, AGENT_LAST_WORDS, ANSWERS, ENDORSE, HUMAN_REQUEST, IDEA_BUILT, IDEA_PITCH, IDEA_REACTION, IDEA_SHARE,
     MERGE_PROPOSE, MERGE_RESPONSE, OBJECTION, PERSONA_DRAFT, PITCH_RESPONSE, REPLACE_REQUEST, REST,
-    SPAWN_REQUEST, SPAWN_RESULT, UNENDORSE, USAGE_REPORT, WORLD_EVENT, envelope,
+    SPAWN_REQUEST, SPAWN_RESULT, UNENDORSE, USAGE_REPORT, WITHDRAW, WORLD_EVENT, envelope,
 )
 from agents.schema import new_branch_id, now_iso, public_persona, validate_persona
 from observer.client import aemit
@@ -67,6 +71,14 @@ def same_idea(a: str | None, b: str | None) -> bool:
     """Two texts that are mostly the same words, like a reply's idea repeated as the turn's twist."""
     wa, wb = set(re.findall(r"[a-z]+", (a or "").lower())), set(re.findall(r"[a-z]+", (b or "").lower()))
     return bool(wa and wb) and len(wa & wb) / min(len(wa), len(wb)) > 0.8
+
+
+# Why an author withdrew a branch, as its memory puts it.
+WITHDRAWN = {
+    "unliked": "everyone you showed it to turned it down",
+    "budget": f"you had more than {config.BRANCH_BUDGET} unbacked branches",
+    "died": "you died with nobody backing it",
+}
 
 
 def load_persona(raw: dict) -> dict:
@@ -99,6 +111,8 @@ class Character:
         self.branches: dict[str, dict] = {}
         self.endorsements: dict[str, list[str]] = {}  # public: agent id -> branch ids it backs
         self.my_endorsed: list[str] = []
+        self.retired: set[str] = set()  # branches their authors withdrew, composted until someone backs them
+        self.verdicts: dict[str, dict[str, bool | None]] = {}  # our branch id -> who we showed it -> liked it, None until they answer
         self.agenda = ""
         self.known: dict[str, dict] = {}  # last seen persona for every peer, kept after they die
         self.dead: set[str] = set()
@@ -271,6 +285,7 @@ class Character:
                 verdict += f" and built on it as {self.ref(built)}"
                 self.social.tie(sender).they_built += 1
             self.social.answer(sender, mine=True, yes=body.get("answer") == "accept")
+            self.heard_verdict(bid, sender, body.get("answer") == "accept")
             self.memory.add(f'{who} reacted to your {bid}: {verdict}, "{clip(body.get("text"), 100)}"', "reaction", about=(sender, bid, built and built["branch_id"]))
             self.tie_note(sender, f"they {verdict.replace('it', 'your ' + str(bid), 1)}: {quote(body.get('text'))}")
             self.answered(sender)
@@ -282,6 +297,7 @@ class Character:
                 verdict += f", and built on it as {self.ref(built)}"
                 self.social.tie(sender).they_built += 1
             self.social.answer(sender, mine=True, yes=bool(body.get("persuaded")))
+            self.heard_verdict(bid, sender, bool(body.get("persuaded")))
             self.memory.add(f'{who} was {verdict} by your pitch for {bid}: "{clip(body.get("text"), 100)}"', "reaction", about=(sender, bid, built and built["branch_id"]))
             self.tie_note(sender, f"your pitch for {bid}: they were {verdict}: {quote(body.get('text'))}")
             self.answered(sender)
@@ -315,6 +331,10 @@ class Character:
                 self.public_unendorse(sender, branch_id)
                 reason = f': "{clip(body.get("reason"), 80)}"' if body.get("reason") else ""
                 self.memory.add(f"{who} dropped {branch_id}{reason}", "endorsement", about=(sender, branch_id))
+        elif kind == WITHDRAW:
+            branch_id = body.get("branch_id")
+            if branch_id and not self.backers(branch_id):  # backing it brings it back, so a late withdraw changes nothing
+                self.retired.add(branch_id)
         elif kind == OBJECTION:
             branch_id = body.get("branch_id")
             self.memory.add(f'{who} objected to {branch_id}: "{clip(body.get("reason"), 100)}"', "objection", about=(sender, branch_id))
@@ -420,6 +440,7 @@ class Character:
             return
         backed.append(branch_id)
         del backed[: max(0, len(backed) - config.MAX_ENDORSEMENTS)]
+        self.retired.discard(branch_id)  # backing a withdrawn branch brings it back
         self.support_changed()
 
     def public_unendorse(self, agent_id: str, branch_id: str) -> None:
@@ -427,6 +448,18 @@ class Character:
         if branch_id in backed:
             backed.remove(branch_id)
             self.support_changed()
+
+    def backers(self, branch_id: str) -> list[str]:
+        return [a for a, ids in self.endorsements.items() if branch_id in ids and a not in self.dead]
+
+    def composted(self, branch_id: str) -> bool:
+        """Its author withdrew it and nobody living backs it. Same as View.composted."""
+        return branch_id in self.retired and not self.backers(branch_id)
+
+    def my_unbacked(self) -> list[str]:
+        """Our own branches that nobody living backs and that are still in play, oldest first. Same as View.my_unbacked."""
+        mine = [b for b, branch in self.branches.items() if self.id in (branch.get("authors") or [])]
+        return [b for b in mine if not self.backers(b) and not self.composted(b)]
 
     def mark_dead(self, agent_id: str) -> None:
         self.dead.add(agent_id)
@@ -451,7 +484,8 @@ class Character:
     def briefing(self) -> dict:
         living = set(self.known) - self.dead | {self.id}
         support = {b: sum(b in ids for a, ids in self.endorsements.items() if a in living) for b in self.branches}
-        top = sorted(self.branches.values(), key=lambda b: (b.get("op") != "seed", -support.get(b["branch_id"], 0)))[:8]
+        in_play = [b for b in self.branches.values() if not self.composted(b["branch_id"])]
+        top = sorted(in_play, key=lambda b: (b.get("op") != "seed", -support.get(b["branch_id"], 0)))[:8]
         return {
             "seed": self.seed,
             "constraints": self.constraints,
@@ -500,6 +534,7 @@ class Character:
             idle=idle,
             ledger=self.social,
             focus=focus_peers,
+            retired=set(self.retired),
         )
 
     # -- talking ----------------------------------------------------------
@@ -580,6 +615,7 @@ class Character:
     # -- a turn -----------------------------------------------------------
 
     async def take_turn(self, idle: bool) -> None:
+        await self.compost_unliked()
         inbox, self.inbox = self.inbox, []
         self.news = False
         peers = await self.living_peers()
@@ -648,13 +684,16 @@ class Character:
             # The twist repeats an idea a reply already made into a branch, so show that branch instead.
             if send_to and send_to not in repeat.get("_sent_to", ()):
                 self.tie_note(send_to, f"you showed them {self.ref(repeat)}: {quote(d.note)}")
+                self.showed(repeat["branch_id"], send_to)
                 await self.send(send_to, IDEA_SHARE, {"branch": {k: v for k, v in repeat.items() if k != "_sent_to"}, "note": clip(d.note, 200)})
         elif action == "twist":
             branch = self.new_branch("twist", [target], [self.id], d.text)
             self.memory.add(f"You twisted {target} into {self.ref(branch)}", "action", about=(target, branch["branch_id"], send_to))
+            await self.keep_budget()
             await self.credit(target, branch, skip=send_to)
             if send_to:
                 self.tie_note(send_to, f"you showed them {self.ref(branch)}: {quote(d.note)}")
+                self.showed(branch["branch_id"], send_to)
                 await self.send(send_to, IDEA_SHARE, {"branch": branch, "note": clip(d.note, 200)})
         elif action == "merge":
             proposal = {"proposal_id": f"mp_{uuid.uuid4().hex[:8]}", "branch_ids": [target, other], "text": clip(d.text, config.BRANCH_TEXT_MAX), "note": clip(d.note, 200)}
@@ -669,6 +708,7 @@ class Character:
         elif action == "pitch":
             self.memory.add(f"You pitched {target} to {self.name_of(send_to)}", "action", about=(send_to, target))
             self.tie_note(send_to, f"you pitched {self.ref(self.branches[target])} to them: {quote(d.note)}")
+            self.showed(target, send_to)
             await self.send(send_to, IDEA_PITCH, {"branch": self.branches[target], "note": clip(d.note, 200)})
 
         for branch_id in d.unendorse:
@@ -713,6 +753,43 @@ class Character:
         self.emit("branch.created", {k: branch[k] for k in ("branch_id", "parent_ids", "op", "authors", "text")})
         return branch
 
+    # -- withdrawing our own branches ---------------------------------------
+    # Only an author hears every answer to its branch, so the author decides when nobody liked it.
+    # The withdraw is a broadcast, so every character composts the same branches.
+
+    def showed(self, branch_id: str, peer: str) -> None:
+        """We showed a peer a branch. If it's ours, their answer counts toward whether anyone liked it."""
+        if self.id in (self.branches.get(branch_id) or {}).get("authors", []):
+            self.verdicts.setdefault(branch_id, {})[peer] = None
+
+    def heard_verdict(self, branch_id: str | None, peer: str | None, liked: bool) -> None:
+        if peer in self.verdicts.get(branch_id, {}):
+            self.verdicts[branch_id][peer] = liked
+
+    async def withdraw(self, branch_id: str, why: str) -> None:
+        self.retired.add(branch_id)
+        self.memory.add(f"You withdrew {branch_id}: {WITHDRAWN[why]}", "action", about=(branch_id,))
+        self.emit(WITHDRAW, {"branch_id": branch_id, "why": why})
+        await self.broadcast(WITHDRAW, {"branch_id": branch_id, "why": why})
+
+    async def compost_unliked(self) -> None:
+        """Withdraw our branches that everyone we showed them to turned down, once nobody living backs them."""
+        if not config.on("compost"):
+            return
+        for branch_id, verdicts in list(self.verdicts.items()):
+            waiting = any(liked is None and peer not in self.dead for peer, liked in verdicts.items())
+            if waiting or any(verdicts.values()) or branch_id in self.retired or self.backers(branch_id):
+                continue
+            await self.withdraw(branch_id, "unliked")
+
+    async def keep_budget(self) -> None:
+        """Past BRANCH_BUDGET unbacked branches of our own, withdraw the oldest."""
+        if not config.on("budget"):
+            return
+        mine = self.my_unbacked()
+        for branch_id in mine[: max(0, len(mine) - config.BRANCH_BUDGET)]:
+            await self.withdraw(branch_id, "budget")
+
     async def reply(self, env: dict, r: Reply) -> None:
         body = env.get("body") or {}
         sender = env.get("from")
@@ -727,6 +804,7 @@ class Character:
                 self.built_this_turn.append({**built, "_sent_to": (sender,)})
                 self.social.tie(sender).you_built += 1
                 self.memory.add(f"You built on {self.name_of(sender)}'s {branch_id}: {self.ref(built)}", "action", about=(sender, branch_id, built["branch_id"]))
+                await self.keep_budget()
             yes = r.answer in ("accept", "counter")
             self.social.answer(sender, mine=False, yes=yes)
             verdict = f"{'accepted' if yes else 'rejected'} their {branch_id}"
@@ -744,6 +822,7 @@ class Character:
                 parents = [b for b in body.get("branch_ids") or [] if b]
                 branch = self.new_branch("merge", parents, [sender, self.id], text)
                 self.memory.add(f"You and {self.name_of(sender)} merged {' and '.join(parents)} into {self.ref(branch)}", "action", about=(sender, branch["branch_id"]))
+                await self.keep_budget()
             answer = r.answer
             self.social.answer(sender, mine=False, yes=branch is not None)
             self.tie_note(sender, f"you answered their merge offer: {answer}{', making ' + branch['branch_id'] if branch else ''}: {quote(r.text)}")
@@ -758,6 +837,7 @@ class Character:
             await self.unendorse(self.my_endorsed[0], "")  # making room isn't an objection
         self.my_endorsed.append(branch_id)
         self.endorsements[self.id] = list(self.my_endorsed)
+        self.retired.discard(branch_id)  # backing a withdrawn branch brings it back
         self.support_changed()
         self.memory.add(f"You backed {self.ref(self.branches[branch_id])}", "action", about=(branch_id,))
         for author in self.branches[branch_id].get("authors") or []:
@@ -856,6 +936,11 @@ class Character:
         words = clip(words, config.LAST_WORDS_MAX)
         self.emit(AGENT_LAST_WORDS, {"text": words})
         await self.broadcast(AGENT_LAST_WORDS, {"text": words})
+        if config.on("compost"):
+            # Nobody is left to champion them, unless a living co-author is.
+            for branch_id in self.my_unbacked():
+                if all(a == self.id or a in self.dead for a in self.branches[branch_id].get("authors") or []):
+                    await self.withdraw(branch_id, "died")
         picked = await self.pick_designers(exclude={self.id}, include_me=False, peers=peers)
         if not picked:
             picked = [self.id]  # nobody is left to design a successor, so the town would end here

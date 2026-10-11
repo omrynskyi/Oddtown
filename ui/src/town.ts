@@ -60,7 +60,7 @@ const MAX_INTERACTIONS = 8;
 export interface FeedItem {
   /** The event it came from. One event can post two items, like a backing that changes the lead, so key on seq and kind. */
   seq: number;
-  kind: "seed" | "twist" | "merge" | "back" | "drop" | "object" | "constraint" | "birth" | "death" | "lead" | "rest" | "end" | "summary";
+  kind: "seed" | "twist" | "merge" | "back" | "drop" | "object" | "constraint" | "birth" | "death" | "lead" | "proposal" | "rest" | "end" | "summary";
   actor?: string;
   text: string;
   quote?: string;
@@ -121,6 +121,12 @@ export interface Town {
   feed: FeedItem[];
   /** The branch with the most living backers, once one leads outright. */
   leader: string | null;
+  /** Living backers besides its authors that make a branch a proposal. Null when proposals are off. */
+  quorum: number | null;
+  /** Branches their authors withdrew, because nobody liked them, they were over budget, or the author died. */
+  retired: string[];
+  /** The branches that are proposals right now. */
+  proposals: string[];
   finalists: Finalist[] | null;
   baseline: string[];
   summary: Summary | null;
@@ -149,6 +155,9 @@ export const initialTown: Town = {
   constraints: [],
   feed: [],
   leader: null,
+  quorum: null,
+  retired: [],
+  proposals: [],
   finalists: null,
   baseline: [],
   summary: null,
@@ -201,7 +210,7 @@ function applyEvent(town: Town, event: AnyEvent): Town {
     case "run.ready":
       return advance(town, "ready");
     case "run.started":
-      return advance(town, "running");
+      return advance({ ...town, quorum: event.payload.quorum ?? null }, "running");
     case "agent.decision": {
       const id = event.agent_id;
       const spoken = say(town, id, event.payload.say, event.seq, false);
@@ -245,14 +254,22 @@ function applyEvent(town: Town, event: AnyEvent): Town {
       const before = town.endorsements[id] ?? [];
       const backed = before.filter((b) => b !== branch_id);
       if (event.type === "endorse") backed.push(branch_id);
+      const backs = event.type === "endorse";
       let next: Town = { ...town, endorsements: { ...town.endorsements, [id]: backed } };
       if (reason?.trim()) next = { ...next, backingReasons: { ...next.backingReasons, [backingKey(id, branch_id)]: reason } };
-      const changed = event.type === "endorse" ? !before.includes(branch_id) : before.includes(branch_id);
+      const changed = backs ? !before.includes(branch_id) : before.includes(branch_id);
+      // Backing a withdrawn branch brings it back.
+      if (changed && backs && next.retired.includes(branch_id)) next = { ...next, retired: next.retired.filter((b) => b !== branch_id) };
       if (changed && town.characters[id] && town.branches[branch_id]) {
-        const backs = event.type === "endorse";
         next = news(next, { seq: event.seq, kind: backs ? "back" : "drop", actor: id, text: backs ? "now backs" : "stopped backing", quote: town.branches[branch_id].text, branchId: branch_id });
       }
-      return lead(next, event.seq);
+      return lead(propose(next, event.seq), event.seq);
+    }
+    case "branch.withdraw": {
+      const { branch_id } = event.payload;
+      // Backing it brings it back, so a withdraw that lands after someone backed it changes nothing.
+      if (town.retired.includes(branch_id) || livingSupport(town)[branch_id]?.length) return town;
+      return { ...town, retired: [...town.retired, branch_id] };
     }
     case "objection": {
       const id = event.agent_id;
@@ -284,7 +301,7 @@ function applyEvent(town: Town, event: AnyEvent): Town {
       const character = id ? town.characters[id] : undefined;
       if (!id || !character || !character.alive) return town;
       const died = { ...town, characters: { ...town.characters, [id]: { ...character, alive: false, diedSeq: event.seq } } };
-      return lead(news(died, { seq: event.seq, kind: "death", actor: id, text: "left town for good" }), event.seq);
+      return lead(propose(news(died, { seq: event.seq, kind: "death", actor: id, text: "left town for good" }), event.seq), event.seq);
     }
     case "run.ended": {
       const ended = { ...advance(town, "ended"), finalists: event.payload.finalists ?? [], baseline: event.payload.baseline ?? [] };
@@ -330,6 +347,19 @@ function lead(town: Town, seq: number): Town {
   return news({ ...town, leader }, { seq, kind: "lead", text: `New front-runner, with ${backers} backers`, quote: town.branches[leader].text, branchId: leader });
 }
 
+/** Keeps the list of proposals, and posts the news when a branch becomes one. */
+function propose(town: Town, seq: number): Town {
+  const support = livingSupport(town);
+  const now = Object.keys(support).filter((id) => isProposal(town, id, support));
+  const fresh = now.filter((id) => !town.proposals.includes(id));
+  if (fresh.length === 0 && now.length === town.proposals.length) return town;
+  let next: Town = { ...town, proposals: now };
+  for (const id of fresh) {
+    next = news(next, { seq, kind: "proposal", text: `New proposal, with ${support[id].length} backers`, quote: town.branches[id].text, branchId: id });
+  }
+  return next;
+}
+
 function say(town: Town, id: string | null, text: string, seq: number, lastWords: boolean): Town {
   if (!id || !town.characters[id] || !text.trim()) return town;
   return { ...town, speech: { ...town.speech, [id]: { text, seq, lastWords } } };
@@ -363,4 +393,16 @@ export function livingSupport(town: Town): Record<string, string[]> {
     for (const branch of branches) (support[branch] ??= []).push(id);
   }
   return support;
+}
+
+/** Backed by at least the quorum of living characters besides its own authors. */
+export function isProposal(town: Town, branchId: string, support = livingSupport(town)): boolean {
+  const branch = town.branches[branchId];
+  if (!branch || town.quorum === null) return false;
+  return (support[branchId] ?? []).filter((a) => !branch.authors.includes(a)).length >= town.quorum;
+}
+
+/** Its author withdrew it and no living character backs it. */
+export function isComposted(town: Town, branchId: string, support = livingSupport(town)): boolean {
+  return town.retired.includes(branchId) && !support[branchId]?.length;
 }

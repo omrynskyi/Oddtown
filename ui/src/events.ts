@@ -80,7 +80,8 @@ export interface Envelope<T extends string, P> {
 export type RunCreated = Envelope<"run.created", { seed: string }>;
 export type AgentBorn = Envelope<"agent.born", { persona: Persona }>;
 export type RunReady = Envelope<"run.ready", { agent_ids: string[] }>;
-export type RunStarted = Envelope<"run.started", Record<string, never>>;
+/** `quorum` is how many backers besides its authors make a branch a proposal. Null, or missing on older runs, means proposals are off. */
+export type RunStarted = Envelope<"run.started", { quorum?: number | null }>;
 export type AgentDecision = Envelope<
   "agent.decision",
   {
@@ -112,6 +113,11 @@ export type PitchResponse = Envelope<"pitch.response", { to: string; persuaded: 
 export type MergeResponse = Envelope<"merge.response", { to: string; answer: "accept" | "reject" | "counter"; text?: string }>;
 export type Endorse = Envelope<"endorse", { branch_id: string; reason?: string }>;
 export type Unendorse = Envelope<"unendorse", { branch_id: string; reason?: string }>;
+/**
+ * An author retiring one of its unbacked branches, and everyone composts it until someone backs it:
+ * everyone it was shown to turned it down, it was over its author's budget, or its author died.
+ */
+export type BranchWithdraw = Envelope<"branch.withdraw", { branch_id: string; why?: "unliked" | "budget" | "died" }>;
 /** A character speaking against a branch it doesn't back. */
 export type Objection = Envelope<"objection", { branch_id: string; reason?: string }>;
 /** What a character has concluded so far, and what it is pushing for next. */
@@ -140,6 +146,7 @@ export type KnownEvent =
   | MergeResponse
   | Endorse
   | Unendorse
+  | BranchWithdraw
   | Objection
   | AgentReflection
   | Rest
@@ -167,6 +174,7 @@ const KNOWN_TYPES = new Set<string>([
   "merge.response",
   "endorse",
   "unendorse",
+  "branch.withdraw",
   "objection",
   "agent.reflection",
   "rest",

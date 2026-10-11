@@ -54,6 +54,9 @@ The prompts don't tell characters to cooperate, befriend or argue. These mechani
 | `design` | Replacement designers see every name used so far and the emptiest corner of trait space, computed by code |
 | `rules` | The rewritten rules, which describe the mechanics without telling characters how to behave |
 | `think` | `reason` comes first in the decision schema, so the model thinks before it picks an action |
+| `quorum` | A branch backed by 2 living characters besides its own authors is a proposal. Proposals are listed first and tagged `[proposal]`, and the town's standing names them |
+| `compost` | If nobody likes a branch, it fades. Only its author hears every answer to it, so the author tracks who it showed the branch to. Once all of them turned it down and nobody living backs it, the author broadcasts `branch.withdraw` and everyone composts it. A dying character withdraws its unbacked branches too, unless a co-author is still alive. A composted branch drops out of the branch list and newcomers' briefings, but stays in the record, still shows when it's in someone's inbox, and comes back if anyone backs it |
+| `budget` | Each character keeps at most 3 unbacked branches of its own. A new one past that withdraws the oldest, and everyone composts it. The prompt shows where the character stands |
 
 A dying character finishes any design work it was handed first, and the last character alive designs its own successor, so the town can't go extinct.
 
@@ -66,6 +69,7 @@ Everything goes through `observer.client`, so it passes `observer/events.py`.
 | `agent.decision` | `action`, `say` (100 characters or fewer), `reason`, plus `target_branch`, `send_to`, `memory_ids`, `life_left` | Every turn |
 | `branch.created` | `branch_id`, `parent_ids`, `op` (`twist` or `merge`), `authors`, `text` | A twist, or an accepted merge (emitted by whoever accepted) |
 | `endorse`, `unendorse` | `branch_id`, `reason` | Backing or dropping a branch |
+| `branch.withdraw` | `branch_id`, `why` (`unliked`, `budget` or `died`) | Retiring an unbacked branch of its own: everyone it was shown to turned it down, it was over the branch budget, or its author died |
 | `agent.last_words`, then `agent.died` | `text`, then `picked` | A death. After a crash, the peer that noticed emits `agent.died` for the dead agent, with `noticed_by` |
 | `agent.reflection` | `insights`, `agenda`, `impressions` (`peer_id`, `impression`) | After a reflection |
 | `llm.call` | `kind`, `model`, `input_tokens`, `cache_read_tokens`, `output_tokens`, `latency_ms`, `retries`, `sections` (estimated input tokens per prompt section), `counts` | Every LLM call |

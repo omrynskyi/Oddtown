@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AnyEvent } from "./events";
 import mockRun from "./fixtures/mock-run.json";
-import { initialTown, livingSupport, townReducer, type Town } from "./town";
+import { initialTown, isComposted, isProposal, livingSupport, townReducer, type Town } from "./town";
 
 // The fixture is a full scripted run from the mock world service.
 // Regenerate it with: .venv/bin/python -m observer.mock_script > ui/src/fixtures/mock-run.json
@@ -234,6 +234,49 @@ describe("town reducer", () => {
       const failed = send("run.summary", null, { error: "timeout" }, town);
       expect(failed.summary?.error).toBe("timeout");
       expect(failed.feed).toEqual(town.feed);
+    });
+  });
+
+  describe("proposals and composting", () => {
+    const started = upTo("run.started").map((e) => (e.type === "run.started" ? { ...e, payload: { quorum: 2 } } : e));
+    const base = play(started);
+    const run = (steps: [string, string | null, Record<string, unknown>][], from = base) =>
+      steps.reduce((town, [type, agent_id, payload]) => townReducer(town, { kind: "event", event: { run_id: RUN, seq: town.lastSeq + 1, ts: 0, type, agent_id, payload } }), from);
+    const created = (id: string, authors: string[]): [string, string, Record<string, unknown>] => [
+      "branch.created",
+      authors[0],
+      { branch_id: id, parent_ids: [], op: "twist", authors, text: `idea ${id}` },
+    ];
+
+    it("makes a branch a proposal once two living characters besides its authors back it", () => {
+      const authorsOnly = run([
+        created("br_p", ["char_dez", "char_rook"]),
+        ["endorse", "char_dez", { branch_id: "br_p" }],
+        ["endorse", "char_rook", { branch_id: "br_p" }],
+        ["endorse", "char_priya", { branch_id: "br_p" }],
+      ]);
+      expect(isProposal(authorsOnly, "br_p")).toBe(false);
+
+      const proposal = run([["endorse", "char_anselm", { branch_id: "br_p" }]], authorsOnly);
+      expect(isProposal(proposal, "br_p")).toBe(true);
+      expect(proposal.proposals).toEqual(["br_p"]);
+      expect(proposal.feed.filter((f) => f.kind === "proposal")).toMatchObject([{ branchId: "br_p", quote: "idea br_p" }]);
+
+      const died = run([["agent.died", "char_anselm", { picked: [] }]], proposal);
+      expect(isProposal(died, "br_p")).toBe(false);
+      expect(died.proposals).toEqual([]);
+      // Without a quorum from the world, as in older runs, nothing is a proposal.
+      expect(isProposal({ ...proposal, quorum: null }, "br_p")).toBe(false);
+    });
+
+    it("composts a withdrawn branch until someone backs it", () => {
+      const withdrawn = run([created("br_w", ["char_dez"]), ["branch.withdraw", "char_dez", { branch_id: "br_w", why: "unliked" }]]);
+      expect(isComposted(withdrawn, "br_w")).toBe(true);
+      const backed = run([["endorse", "char_rook", { branch_id: "br_w" }]], withdrawn);
+      expect(isComposted(backed, "br_w")).toBe(false);
+      expect(isComposted(run([["unendorse", "char_rook", { branch_id: "br_w" }]], backed), "br_w")).toBe(false);
+      // A withdraw that lands after someone backed it changes nothing.
+      expect(isComposted(run([["branch.withdraw", "char_dez", { branch_id: "br_w" }]], backed), "br_w")).toBe(false);
     });
   });
 });

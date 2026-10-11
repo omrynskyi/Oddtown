@@ -16,6 +16,7 @@ Bodies, by type. A `branch` is always the full branch dict from agents.schema.Br
     persona.draft    {"replaces", "replaces_name", "order", "step", "generation", "draft", "changes", "briefing"}
     endorse          {"branch", "reason"}
     unendorse        {"branch_id", "reason"}
+    branch.withdraw  {"branch_id", "why": "unliked"|"budget"|"died"}  an author retires an unbacked branch; everyone composts it
     objection        {"branch_id", "reason"}
     agent.hello      {"name", "one_liner", "replaces"}
     agent.last_words {"text"}
@@ -40,6 +41,7 @@ PERSONA_DRAFT = "persona.draft"
 # Broadcast
 ENDORSE = "endorse"
 UNENDORSE = "unendorse"
+WITHDRAW = "branch.withdraw"
 OBJECTION = "objection"
 AGENT_HELLO = "agent.hello"
 AGENT_LAST_WORDS = "agent.last_words"

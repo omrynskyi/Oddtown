@@ -79,6 +79,30 @@ Writing:
 - Use only branch ids and character ids that appear in this prompt. Leave fields that don't apply null."""
 
 
+
+
+def rules_text() -> str:
+    """The rules, plus a line for each of the quorum, compost and budget mechanisms that's switched on."""
+    lines = []
+    if config.on("quorum"):
+        lines.append(
+            f"- A branch backed by at least {config.QUORUM} living characters besides its own authors is a proposal. "
+            "Proposals are marked [proposal] and listed first."
+        )
+    if config.on("compost"):
+        lines.append(
+            "- When everyone a branch's author showed it to turned it down and nobody backs it, it drops out of everyone's "
+            "list. So do a character's unbacked branches when it dies. Backing a branch brings it back."
+        )
+    if config.on("budget"):
+        lines.append(
+            f"- You keep at most {config.BRANCH_BUDGET} unbacked branches of your own. "
+            "Making another retires your oldest, and it drops out of everyone's list."
+        )
+    rules = RULES if config.on("rules") else RULES_V1
+    return rules + ("\n\nWhich branches stay in play:\n" + "\n".join(lines) if lines else "")
+
+
 # -- output schemas -----------------------------------------------------------
 
 
@@ -168,6 +192,14 @@ class LastWords(BaseModel):
     text: str = Field(description="Under 280 characters")
 
 
+# -- proposals ------------------------------------------------------------------
+
+
+def is_proposal(branch: dict, backers: list[str]) -> bool:
+    """Backed by at least QUORUM living characters besides its own authors. Backing is public, so everyone agrees."""
+    return config.on("quorum") and len(set(backers) - set(branch.get("authors") or [])) >= config.QUORUM
+
+
 # -- what the character can see -----------------------------------------------
 
 
@@ -192,6 +224,7 @@ class View:
     idle: bool = False
     ledger: Ledger | None = None  # what passed between you and each peer
     focus: set[str] = field(default_factory=set)  # peers this turn is about, shown with their full history
+    retired: set[str] = field(default_factory=set)  # branches their authors withdrew (branch.withdraw)
 
     def name(self, agent_id: str | None) -> str:
         if agent_id == self.me["id"]:
@@ -204,6 +237,18 @@ class View:
     def backers(self, branch_id: str) -> list[str]:
         living = {p["id"] for p in self.peers} | {self.me["id"]}
         return [a for a, ids in self.endorsements.items() if branch_id in ids and a in living]
+
+    def proposal(self, branch_id: str) -> bool:
+        return is_proposal(self.branches[branch_id], self.backers(branch_id))
+
+    def composted(self, branch_id: str) -> bool:
+        """Its author withdrew it and nobody living backs it."""
+        return branch_id in self.retired and not self.backers(branch_id)
+
+    def my_unbacked(self) -> list[str]:
+        """Your own branches that nobody living backs and that are still in play, oldest first."""
+        mine = [b for b, branch in self.branches.items() if self.me["id"] in (branch.get("authors") or [])]
+        return [b for b in mine if not self.backers(b) and not self.composted(b)]
 
 
 def clip(text: str | None, limit: int) -> str:
@@ -226,7 +271,7 @@ def persona_text(p: dict) -> str:
 
 
 def system_sections(me: dict) -> list[Section]:
-    return [Section("rules", RULES if config.on("rules") else RULES_V1), Section("persona", persona_text(me))]
+    return [Section("rules", rules_text()), Section("persona", persona_text(me))]
 
 
 def world_section(v: View) -> Section:
@@ -239,9 +284,17 @@ def world_section(v: View) -> Section:
     if v.agenda:
         lines.append(f"Your agenda: {v.agenda}")
     lines.append("You back: " + (", ".join(v.my_endorsed) if v.my_endorsed else "nothing yet"))
+    if config.on("budget"):
+        mine = v.my_unbacked()
+        budget = f"Your unbacked branches: {', '.join(mine) or 'none'} ({len(mine)} of {config.BRANCH_BUDGET}"
+        if len(mine) >= config.BRANCH_BUDGET:
+            budget += f"; a new one retires {mine[0]}"
+        lines.append(budget + ")")
     if config.on("rules"):
-        support = sorted(((len(v.backers(b)), b) for b in v.branches if v.backers(b)), reverse=True)[:3]
-        standing = ", ".join(f"{b} ({n} {'backer' if n == 1 else 'backers'})" for n, b in support)
+        support = sorted(((v.proposal(b), len(v.backers(b)), b) for b in v.branches if v.backers(b)), reverse=True)[:3]
+        standing = ", ".join(
+            f"{b} ({n} {'backer' if n == 1 else 'backers'}{', a proposal' if proposal else ''})" for proposal, n, b in support
+        )
         lines.append("The town's answer right now, by living backers: " + (standing or "nothing is backed yet"))
     return Section("world", "\n".join(lines))
 
@@ -286,24 +339,30 @@ def people_section(v: View) -> Section:
 
 
 def pick_branches(v: View, limit: int = config.MAX_BRANCHES_IN_PROMPT) -> list[dict]:
-    """The seed, branches in the inbox, branches with backers, then the newest."""
+    """The seed, proposals, branches in the inbox, branches with backers, then the newest.
+    Composted branches are left out, unless they're in the inbox."""
     wanted: list[str] = []
 
-    def want(branch_id: str | None):
+    def want(branch_id: str | None, even_composted: bool = False):
         if branch_id and branch_id in v.branches and branch_id not in wanted:
-            wanted.append(branch_id)
+            if even_composted or not v.composted(branch_id):
+                wanted.append(branch_id)
 
     for b in v.branches.values():
         if b.get("op") == "seed":
             want(b["branch_id"])
+    by_support = sorted(v.branches, key=lambda b: -len(v.backers(b)))
+    for branch_id in by_support:
+        if v.proposal(branch_id):
+            want(branch_id)
     for env in v.inbox:
         body = env.get("body") or {}
-        want((body.get("branch") or {}).get("branch_id"))
+        want((body.get("branch") or {}).get("branch_id"), even_composted=True)
         for branch_id in body.get("branch_ids") or []:
-            want(branch_id)
+            want(branch_id, even_composted=True)
     for branch_id in v.my_endorsed:
         want(branch_id)
-    for branch_id in sorted(v.branches, key=lambda b: -len(v.backers(b))):
+    for branch_id in by_support:
         if v.backers(branch_id):
             want(branch_id)
     for branch_id in reversed(list(v.branches)):
@@ -326,7 +385,8 @@ def branches_section(v: View) -> Section:
             if parent_authors and config.on("credit"):
                 origin += f", building on {', '.join(v.name(a) for a in sorted(parent_authors))}"
         backers = ", ".join(v.name(a) for a in v.backers(b["branch_id"])) or "nobody"
-        lines.append(f'- {b["branch_id"]} ({origin}; backed by {backers}): "{clip(b["text"], config.BRANCH_TEXT_MAX)}"')
+        tag = " [proposal]" if v.proposal(b["branch_id"]) else ""
+        lines.append(f'- {b["branch_id"]}{tag} ({origin}; backed by {backers}): "{clip(b["text"], config.BRANCH_TEXT_MAX)}"')
     return Section("branches", "\n".join(lines))
 
 
@@ -436,7 +496,7 @@ def last_words_prompt(v: View) -> tuple[list[Section], list[Section]]:
 def mock_decision(v: View, rng: random.Random) -> Decision:
     me = v.me
     love, hate = rng.choice(me["loves"]), rng.choice(me["hates"])
-    branches = list(v.branches.values())
+    branches = [b for b in v.branches.values() if not v.composted(b["branch_id"])]
     others = [b for b in branches if b.get("op") != "seed"]
     peers = [p["id"] for p in v.peers]
     action = rng.choices(["twist", "back", "pitch", "trash", "merge", "ignore"], [40, 25, 10, 8, 10, 7])[0]

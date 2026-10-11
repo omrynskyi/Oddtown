@@ -58,7 +58,7 @@ class RunReady(Payload):
 
 
 class RunStarted(Payload):
-    pass
+    quorum: int | None = None  # backers besides its authors that make a branch a proposal; None when proposals are off
 
 
 class AgentDecision(Payload):
@@ -77,6 +77,13 @@ class BranchCreated(Payload):
 
 class Endorse(Payload):
     branch_id: str
+
+
+class BranchWithdraw(Payload):
+    """An author retired one of its unbacked branches, and every character composts it until someone backs it."""
+
+    branch_id: str
+    why: Literal["unliked", "budget", "died"] | None = None  # everyone it was shown to turned it down, over budget, author died
 
 
 class WorldEvent(Payload):
@@ -139,6 +146,7 @@ PAYLOADS: dict[str, type[Payload]] = {
     "branch.created": BranchCreated,
     "endorse": Endorse,
     "unendorse": Endorse,
+    "branch.withdraw": BranchWithdraw,
     "world.event": WorldEvent,
     "agent.last_words": AgentLastWords,
     "agent.died": AgentDied,
