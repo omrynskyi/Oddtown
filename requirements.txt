@@ -17,6 +17,13 @@ uvicorn[standard]==0.54.0
 # Persona schema check and decision-call parsing
 pydantic==2.14.0
 
+# HTTP fallback transport and talking to the world service
+httpx==0.28.1
+
+# Tests
+pytest==9.1.1
+pytest-asyncio==1.4.0
+
 # Trait distances when refining a replacement persona
 numpy==2.5.4
 
