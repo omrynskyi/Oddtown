@@ -1,0 +1,1919 @@
+[
+ {
+  "run_id": "run_fixture",
+  "seq": 1,
+  "ts": 1760173200.0,
+  "type": "run.created",
+  "agent_id": null,
+  "payload": {
+   "seed": "a coffee subscription"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 2,
+  "ts": 1760173200.5,
+  "type": "agent.born",
+  "agent_id": "char_marg",
+  "payload": {
+   "persona": {
+    "id": "char_marg",
+    "name": "Marguerite Bell",
+    "one_liner": "Retired lighthouse keeper who distrusts anything that needs electricity",
+    "worldview": "Things worth having should outlast you.",
+    "loves": [
+     "objects that last fifty years",
+     "the sea"
+    ],
+    "hates": [
+     "subscriptions",
+     "screens"
+    ],
+    "red_line": "Never backs an idea that needs an app",
+    "voice": "Short sentences, nautical metaphors, dry humor",
+    "traits": {
+     "time_horizon": 0.9,
+     "tech_attitude": -0.8,
+     "scale": -0.6,
+     "sociality": -0.4,
+     "risk": 0.2,
+     "rationality": -0.3
+    },
+    "model": "mock",
+    "lineage": {
+     "generation": 0,
+     "designed_by": [],
+     "replaces": null
+    }
+   }
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 3,
+  "ts": 1760173201.2,
+  "type": "agent.born",
+  "agent_id": "char_dez",
+  "payload": {
+   "persona": {
+    "id": "char_dez",
+    "name": "Dez Moreno",
+    "one_liner": "Competitive pigeon racer",
+    "worldview": "Every problem is really a logistics problem.",
+    "loves": [
+     "route maps",
+     "punctual birds"
+    ],
+    "hates": [
+     "vague plans",
+     "missed handoffs"
+    ],
+    "red_line": "Trashes any idea with no delivery plan",
+    "voice": "Fast, clipped, talks in routes and times",
+    "traits": {
+     "time_horizon": 0.1,
+     "tech_attitude": 0.3,
+     "scale": 0.2,
+     "sociality": 0.4,
+     "risk": 0.5,
+     "rationality": 0.8
+    },
+    "model": "mock",
+    "lineage": {
+     "generation": 0,
+     "designed_by": [],
+     "replaces": null
+    }
+   }
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 4,
+  "ts": 1760173201.9,
+  "type": "agent.born",
+  "agent_id": "char_anselm",
+  "payload": {
+   "persona": {
+    "id": "char_anselm",
+    "name": "Brother Anselm",
+    "one_liner": "A monk who thinks in decades",
+    "worldview": "Anything worth doing takes ten years.",
+    "loves": [
+     "patience",
+     "bells"
+    ],
+    "hates": [
+     "deadlines",
+     "growth hacks"
+    ],
+    "red_line": "Won't back anything built for speed",
+    "voice": "Slow, gentle, fond of parables",
+    "traits": {
+     "time_horizon": 1.0,
+     "tech_attitude": -0.5,
+     "scale": -0.3,
+     "sociality": -0.7,
+     "risk": -0.8,
+     "rationality": 0.2
+    },
+    "model": "mock",
+    "lineage": {
+     "generation": 0,
+     "designed_by": [],
+     "replaces": null
+    }
+   }
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 5,
+  "ts": 1760173202.6,
+  "type": "agent.born",
+  "agent_id": "char_priya",
+  "payload": {
+   "persona": {
+    "id": "char_priya",
+    "name": "Priya Raman",
+    "one_liner": "Hyper-growth startup founder",
+    "worldview": "If it can't reach a billion people it's a hobby.",
+    "loves": [
+     "flywheels",
+     "network effects"
+    ],
+    "hates": [
+     "artisanal anything",
+     "small markets"
+    ],
+    "red_line": "Won't back anything that can't scale",
+    "voice": "Energetic, metric-heavy, says 'unlock' a lot",
+    "traits": {
+     "time_horizon": -0.6,
+     "tech_attitude": 0.9,
+     "scale": 1.0,
+     "sociality": 0.6,
+     "risk": 0.9,
+     "rationality": 0.5
+    },
+    "model": "mock",
+    "lineage": {
+     "generation": 0,
+     "designed_by": [],
+     "replaces": null
+    }
+   }
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 6,
+  "ts": 1760173203.3,
+  "type": "agent.born",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "persona": {
+    "id": "char_tamsin",
+    "name": "Tamsin Hale",
+    "one_liner": "Theater kid turned funeral director",
+    "worldview": "Every product is secretly a ritual.",
+    "loves": [
+     "candles",
+     "exits and entrances"
+    ],
+    "hates": [
+     "forgettable moments",
+     "fine print"
+    ],
+    "red_line": "Rejects ideas with no ceremony in them",
+    "voice": "Dramatic, warm, speaks in stage directions",
+    "traits": {
+     "time_horizon": 0.4,
+     "tech_attitude": -0.2,
+     "scale": -0.2,
+     "sociality": 0.8,
+     "risk": 0.3,
+     "rationality": -0.7
+    },
+    "model": "mock",
+    "lineage": {
+     "generation": 0,
+     "designed_by": [],
+     "replaces": null
+    }
+   }
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 7,
+  "ts": 1760173204.0,
+  "type": "agent.born",
+  "agent_id": "char_rook",
+  "payload": {
+   "persona": {
+    "id": "char_rook",
+    "name": "Rook Adeyemi",
+    "one_liner": "Deep-sea biologist",
+    "worldview": "Everything should work like an ecosystem.",
+    "loves": [
+     "closed loops",
+     "symbiosis"
+    ],
+    "hates": [
+     "packaging",
+     "single-use anything"
+    ],
+    "red_line": "Trashes anything that creates waste",
+    "voice": "Calm, precise, borrows from marine biology",
+    "traits": {
+     "time_horizon": 0.7,
+     "tech_attitude": 0.1,
+     "scale": 0.5,
+     "sociality": -0.3,
+     "risk": -0.2,
+     "rationality": 0.9
+    },
+    "model": "mock",
+    "lineage": {
+     "generation": 0,
+     "designed_by": [],
+     "replaces": null
+    }
+   }
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 8,
+  "ts": 1760173204.5,
+  "type": "run.ready",
+  "agent_id": null,
+  "payload": {
+   "agent_ids": [
+    "char_marg",
+    "char_dez",
+    "char_anselm",
+    "char_priya",
+    "char_tamsin",
+    "char_rook"
+   ]
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 9,
+  "ts": 1760173206.5,
+  "type": "run.started",
+  "agent_id": null,
+  "payload": {}
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 10,
+  "ts": 1760173206.7,
+  "type": "world.event",
+  "agent_id": null,
+  "payload": {
+   "kind": "seed",
+   "text": "a coffee subscription"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 11,
+  "ts": 1760173206.9,
+  "type": "branch.created",
+  "agent_id": null,
+  "payload": {
+   "branch_id": "br_000",
+   "parent_ids": [],
+   "op": "seed",
+   "authors": [
+    "world"
+   ],
+   "text": "a coffee subscription"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 12,
+  "ts": 1760173210.1476655,
+  "type": "agent.decision",
+  "agent_id": "char_dez",
+  "payload": {
+   "action": "twist",
+   "say": "Cool idea. How does it get to the door?",
+   "reason": "Every problem is really a logistics problem.",
+   "target_branch": "br_000"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 13,
+  "ts": 1760173210.2476656,
+  "type": "branch.created",
+  "agent_id": "char_dez",
+  "payload": {
+   "branch_id": "br_001",
+   "parent_ids": [
+    "br_000"
+   ],
+   "op": "twist",
+   "authors": [
+    "char_dez"
+   ],
+   "text": "a coffee subscription where neighbors relay each other's deliveries"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 14,
+  "ts": 1760173210.3476655,
+  "type": "endorse",
+  "agent_id": "char_dez",
+  "payload": {
+   "branch_id": "br_001"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 15,
+  "ts": 1760173213.3132415,
+  "type": "agent.decision",
+  "agent_id": "char_rook",
+  "payload": {
+   "action": "twist",
+   "say": "Where does the waste go? Follow it.",
+   "reason": "Everything should work like an ecosystem.",
+   "target_branch": "br_001"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 16,
+  "ts": 1760173213.4132416,
+  "type": "branch.created",
+  "agent_id": "char_rook",
+  "payload": {
+   "branch_id": "br_002",
+   "parent_ids": [
+    "br_001"
+   ],
+   "op": "twist",
+   "authors": [
+    "char_rook"
+   ],
+   "text": "a coffee subscription in returnable jars that cycle like a reef"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 17,
+  "ts": 1760173213.5132415,
+  "type": "endorse",
+  "agent_id": "char_rook",
+  "payload": {
+   "branch_id": "br_002"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 18,
+  "ts": 1760173215.4946675,
+  "type": "agent.decision",
+  "agent_id": "char_priya",
+  "payload": {
+   "action": "twist",
+   "say": "Ship it Friday, fix it Monday.",
+   "reason": "If it can't reach a billion people it's a hobby.",
+   "target_branch": "br_000"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 19,
+  "ts": 1760173215.5946677,
+  "type": "branch.created",
+  "agent_id": "char_priya",
+  "payload": {
+   "branch_id": "br_003",
+   "parent_ids": [
+    "br_000"
+   ],
+   "op": "twist",
+   "authors": [
+    "char_priya"
+   ],
+   "text": "a coffee subscription as a platform where anyone can be a supplier"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 20,
+  "ts": 1760173218.6606615,
+  "type": "agent.decision",
+  "agent_id": "char_anselm",
+  "payload": {
+   "action": "back",
+   "say": "A vow lasts longer than a contract.",
+   "reason": "Anything worth doing takes ten years.",
+   "target_branch": "br_001"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 21,
+  "ts": 1760173218.8606613,
+  "type": "endorse",
+  "agent_id": "char_anselm",
+  "payload": {
+   "branch_id": "br_001"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 22,
+  "ts": 1760173222.6131716,
+  "type": "agent.decision",
+  "agent_id": "char_anselm",
+  "payload": {
+   "action": "back",
+   "say": "Ten years from now, will anyone remember it?",
+   "reason": "Anything worth doing takes ten years.",
+   "target_branch": "br_002"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 23,
+  "ts": 1760173222.8131716,
+  "type": "endorse",
+  "agent_id": "char_anselm",
+  "payload": {
+   "branch_id": "br_002"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 24,
+  "ts": 1760173225.4514496,
+  "type": "agent.decision",
+  "agent_id": "char_rook",
+  "payload": {
+   "action": "twist",
+   "say": "Nature already solved this. Look at a reef.",
+   "reason": "Everything should work like an ecosystem.",
+   "target_branch": "br_001"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 25,
+  "ts": 1760173225.5514498,
+  "type": "branch.created",
+  "agent_id": "char_rook",
+  "payload": {
+   "branch_id": "br_004",
+   "parent_ids": [
+    "br_001"
+   ],
+   "op": "twist",
+   "authors": [
+    "char_rook"
+   ],
+   "text": "a coffee subscription where the grounds feed a neighborhood garden that grows the next batch"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 26,
+  "ts": 1760173228.7292767,
+  "type": "agent.decision",
+  "agent_id": "char_marg",
+  "payload": {
+   "action": "twist",
+   "say": "I'd back it if it had no screen.",
+   "reason": "Things worth having should outlast you.",
+   "target_branch": "br_000"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 27,
+  "ts": 1760173228.8292766,
+  "type": "branch.created",
+  "agent_id": "char_marg",
+  "payload": {
+   "branch_id": "br_005",
+   "parent_ids": [
+    "br_000"
+   ],
+   "op": "twist",
+   "authors": [
+    "char_marg"
+   ],
+   "text": "a coffee subscription with no app, no account, just a ledger and a key"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 28,
+  "ts": 1760173228.9292767,
+  "type": "endorse",
+  "agent_id": "char_marg",
+  "payload": {
+   "branch_id": "br_005"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 29,
+  "ts": 1760173231.141194,
+  "type": "agent.decision",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "action": "back",
+   "say": "Even cancelling should feel like a farewell.",
+   "reason": "Every product is secretly a ritual.",
+   "target_branch": "br_004"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 30,
+  "ts": 1760173231.3411942,
+  "type": "endorse",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "branch_id": "br_004"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 31,
+  "ts": 1760173234.3123178,
+  "type": "agent.decision",
+  "agent_id": "char_priya",
+  "payload": {
+   "action": "back",
+   "say": "This is a feature, not a company.",
+   "reason": "If it can't reach a billion people it's a hobby.",
+   "target_branch": "br_002"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 32,
+  "ts": 1760173234.5123177,
+  "type": "endorse",
+  "agent_id": "char_priya",
+  "payload": {
+   "branch_id": "br_002"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 33,
+  "ts": 1760173237.7103066,
+  "type": "agent.decision",
+  "agent_id": "char_dez",
+  "payload": {
+   "action": "twist",
+   "say": "Cut a stop and it's twice as fast.",
+   "reason": "Every problem is really a logistics problem.",
+   "target_branch": "br_004"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 34,
+  "ts": 1760173237.8103065,
+  "type": "branch.created",
+  "agent_id": "char_dez",
+  "payload": {
+   "branch_id": "br_006",
+   "parent_ids": [
+    "br_004"
+   ],
+   "op": "twist",
+   "authors": [
+    "char_dez"
+   ],
+   "text": "a coffee subscription handed off at railway stations along one line"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 35,
+  "ts": 1760173241.1691973,
+  "type": "agent.decision",
+  "agent_id": "char_marg",
+  "payload": {
+   "action": "pitch",
+   "say": "A monthly box is a leash.",
+   "reason": "Things worth having should outlast you.",
+   "target_branch": "br_001"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 36,
+  "ts": 1760173244.1930628,
+  "type": "agent.decision",
+  "agent_id": "char_dez",
+  "payload": {
+   "action": "trash",
+   "say": "No route, no deal.",
+   "reason": "Every problem is really a logistics problem.",
+   "target_branch": "br_004"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 37,
+  "ts": 1760173247.0364597,
+  "type": "agent.decision",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "action": "twist",
+   "say": "This needs an entrance.",
+   "reason": "Every product is secretly a ritual.",
+   "target_branch": "br_004"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 38,
+  "ts": 1760173247.1364596,
+  "type": "branch.created",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "branch_id": "br_007",
+   "parent_ids": [
+    "br_004"
+   ],
+   "op": "twist",
+   "authors": [
+    "char_tamsin"
+   ],
+   "text": "a coffee subscription with a farewell ceremony when you cancel"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 39,
+  "ts": 1760173247.2364595,
+  "type": "endorse",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "branch_id": "br_007"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 40,
+  "ts": 1760173249.7368164,
+  "type": "agent.decision",
+  "agent_id": "char_priya",
+  "payload": {
+   "action": "back",
+   "say": "I'm backing the one with network effects.",
+   "reason": "If it can't reach a billion people it's a hobby.",
+   "target_branch": "br_001"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 41,
+  "ts": 1760173249.9368165,
+  "type": "endorse",
+  "agent_id": "char_priya",
+  "payload": {
+   "branch_id": "br_001"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 42,
+  "ts": 1760173253.4167519,
+  "type": "agent.decision",
+  "agent_id": "char_marg",
+  "payload": {
+   "action": "back",
+   "say": "I'd back it if it had no screen.",
+   "reason": "Things worth having should outlast you.",
+   "target_branch": "br_001"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 43,
+  "ts": 1760173253.616752,
+  "type": "endorse",
+  "agent_id": "char_marg",
+  "payload": {
+   "branch_id": "br_001"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 44,
+  "ts": 1760173255.5380907,
+  "type": "agent.decision",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "action": "twist",
+   "say": "This needs an entrance.",
+   "reason": "Every product is secretly a ritual.",
+   "target_branch": "br_007"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 45,
+  "ts": 1760173255.6380908,
+  "type": "branch.created",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "branch_id": "br_008",
+   "parent_ids": [
+    "br_007"
+   ],
+   "op": "twist",
+   "authors": [
+    "char_tamsin"
+   ],
+   "text": "a coffee subscription that marks each birthday with a rare blend"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 46,
+  "ts": 1760173259.3121715,
+  "type": "agent.decision",
+  "agent_id": "char_marg",
+  "payload": {
+   "action": "twist",
+   "say": "Steady now. Good ideas don't rush.",
+   "reason": "Things worth having should outlast you.",
+   "target_branch": "br_005"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 47,
+  "ts": 1760173259.4121714,
+  "type": "branch.created",
+  "agent_id": "char_marg",
+  "payload": {
+   "branch_id": "br_009",
+   "parent_ids": [
+    "br_005"
+   ],
+   "op": "twist",
+   "authors": [
+    "char_marg"
+   ],
+   "text": "a coffee subscription, delivered once a year in an oak chest that outlives you"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 48,
+  "ts": 1760173262.2995574,
+  "type": "agent.decision",
+  "agent_id": "char_dez",
+  "payload": {
+   "action": "trash",
+   "say": "No route, no deal.",
+   "reason": "Every problem is really a logistics problem.",
+   "target_branch": "br_004"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 49,
+  "ts": 1760173265.0953526,
+  "type": "agent.decision",
+  "agent_id": "char_priya",
+  "payload": {
+   "action": "twist",
+   "say": "I'm backing the one with network effects.",
+   "reason": "If it can't reach a billion people it's a hobby.",
+   "target_branch": "br_006"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 50,
+  "ts": 1760173265.1953528,
+  "type": "branch.created",
+  "agent_id": "char_priya",
+  "payload": {
+   "branch_id": "br_010",
+   "parent_ids": [
+    "br_006"
+   ],
+   "op": "twist",
+   "authors": [
+    "char_priya"
+   ],
+   "text": "a coffee subscription licensed to every office building on Earth"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 51,
+  "ts": 1760173266.5,
+  "type": "agent.last_words",
+  "agent_id": "char_rook",
+  "payload": {
+   "text": "Return what you take. That is all an ecosystem asks."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 52,
+  "ts": 1760173267.0,
+  "type": "agent.died",
+  "agent_id": "char_rook",
+  "payload": {
+   "picked": [
+    "char_marg",
+    "char_priya",
+    "char_dez"
+   ]
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 53,
+  "ts": 1760173268.7339125,
+  "type": "agent.decision",
+  "agent_id": "char_priya",
+  "payload": {
+   "action": "ignore",
+   "say": "This is a feature, not a company.",
+   "reason": "If it can't reach a billion people it's a hobby."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 54,
+  "ts": 1760173270.5,
+  "type": "agent.born",
+  "agent_id": "char_ines",
+  "payload": {
+   "persona": {
+    "id": "char_ines",
+    "name": "Ines Okafor",
+    "one_liner": "Night-shift air traffic controller who trusts only checklists",
+    "worldview": "Nothing is safe until it has been checked twice.",
+    "loves": [
+     "checklists",
+     "quiet radios"
+    ],
+    "hates": [
+     "improvising",
+     "single points of failure"
+    ],
+    "red_line": "Won't back anything without a fallback",
+    "voice": "Calm, procedural, counts things out loud",
+    "traits": {
+     "time_horizon": 0.3,
+     "tech_attitude": 0.4,
+     "scale": 0.3,
+     "sociality": -0.1,
+     "risk": -0.9,
+     "rationality": 1.0
+    },
+    "model": "mock",
+    "lineage": {
+     "generation": 1,
+     "designed_by": [
+      "char_marg",
+      "char_priya",
+      "char_dez"
+     ],
+     "replaces": "char_rook"
+    }
+   }
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 55,
+  "ts": 1760173270.8,
+  "type": "agent.hello",
+  "agent_id": "char_ines",
+  "payload": {
+   "text": "Checklist first. Then we talk."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 56,
+  "ts": 1760173270.8998818,
+  "type": "agent.decision",
+  "agent_id": "char_dez",
+  "payload": {
+   "action": "twist",
+   "say": "No route, no deal.",
+   "reason": "Every problem is really a logistics problem.",
+   "target_branch": "br_000"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 57,
+  "ts": 1760173270.9998817,
+  "type": "branch.created",
+  "agent_id": "char_dez",
+  "payload": {
+   "branch_id": "br_011",
+   "parent_ids": [
+    "br_000"
+   ],
+   "op": "twist",
+   "authors": [
+    "char_dez"
+   ],
+   "text": "a coffee subscription on a fixed route, same doorstep, same minute, every week"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 58,
+  "ts": 1760173273.2645676,
+  "type": "agent.decision",
+  "agent_id": "char_ines",
+  "payload": {
+   "action": "twist",
+   "say": "Two independent suppliers or it's not safe.",
+   "reason": "Nothing is safe until it has been checked twice.",
+   "target_branch": "br_008"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 59,
+  "ts": 1760173273.3645675,
+  "type": "branch.created",
+  "agent_id": "char_ines",
+  "payload": {
+   "branch_id": "br_012",
+   "parent_ids": [
+    "br_008"
+   ],
+   "op": "twist",
+   "authors": [
+    "char_ines"
+   ],
+   "text": "a coffee subscription that runs on a printed checklist anyone can follow"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 60,
+  "ts": 1760173275.9017909,
+  "type": "agent.decision",
+  "agent_id": "char_dez",
+  "payload": {
+   "action": "pitch",
+   "say": "Who's on the last mile? Nobody? Trash.",
+   "reason": "Every problem is really a logistics problem.",
+   "target_branch": "br_010"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 61,
+  "ts": 1760173279.2117238,
+  "type": "agent.decision",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "action": "twist",
+   "say": "No ritual, no memory, no point.",
+   "reason": "Every product is secretly a ritual.",
+   "target_branch": "br_012"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 62,
+  "ts": 1760173279.3117237,
+  "type": "branch.created",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "branch_id": "br_013",
+   "parent_ids": [
+    "br_012"
+   ],
+   "op": "twist",
+   "authors": [
+    "char_tamsin"
+   ],
+   "text": "a coffee subscription where every delivery is opened together at sunset"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 63,
+  "ts": 1760173279.361724,
+  "type": "unendorse",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "branch_id": "br_004"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 64,
+  "ts": 1760173279.4117239,
+  "type": "endorse",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "branch_id": "br_013"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 65,
+  "ts": 1760173281.9999638,
+  "type": "agent.decision",
+  "agent_id": "char_marg",
+  "payload": {
+   "action": "pitch",
+   "say": "A monthly box is a leash.",
+   "reason": "Things worth having should outlast you.",
+   "target_branch": "br_004"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 66,
+  "ts": 1760173284.134659,
+  "type": "agent.decision",
+  "agent_id": "char_dez",
+  "payload": {
+   "action": "back",
+   "say": "Cool idea. How does it get to the door?",
+   "reason": "Every problem is really a logistics problem.",
+   "target_branch": "br_006"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 67,
+  "ts": 1760173284.334659,
+  "type": "endorse",
+  "agent_id": "char_dez",
+  "payload": {
+   "branch_id": "br_006"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 68,
+  "ts": 1760173287.3361137,
+  "type": "agent.decision",
+  "agent_id": "char_anselm",
+  "payload": {
+   "action": "twist",
+   "say": "Ten years from now, will anyone remember it?",
+   "reason": "Anything worth doing takes ten years.",
+   "target_branch": "br_008"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 69,
+  "ts": 1760173287.4361136,
+  "type": "branch.created",
+  "agent_id": "char_anselm",
+  "payload": {
+   "branch_id": "br_014",
+   "parent_ids": [
+    "br_008"
+   ],
+   "op": "twist",
+   "authors": [
+    "char_anselm"
+   ],
+   "text": "a coffee subscription you join for ten years, with a vow instead of a contract"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 70,
+  "ts": 1760173290.5635881,
+  "type": "agent.decision",
+  "agent_id": "char_anselm",
+  "payload": {
+   "action": "merge",
+   "say": "I will sit with this one a while.",
+   "reason": "Anything worth doing takes ten years.",
+   "target_branch": "br_007"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 71,
+  "ts": 1760173290.663588,
+  "type": "branch.created",
+  "agent_id": "char_anselm",
+  "payload": {
+   "branch_id": "br_015",
+   "parent_ids": [
+    "br_007",
+    "br_003"
+   ],
+   "op": "merge",
+   "authors": [
+    "char_anselm",
+    "char_priya"
+   ],
+   "text": "a coffee subscription with a farewell ceremony when you cancel, combined with a coffee subscription as a platform where anyone can be a supplier"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 72,
+  "ts": 1760173293.8324072,
+  "type": "agent.decision",
+  "agent_id": "char_ines",
+  "payload": {
+   "action": "pitch",
+   "say": "Two independent suppliers or it's not safe.",
+   "reason": "Nothing is safe until it has been checked twice.",
+   "target_branch": "br_002"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 73,
+  "ts": 1760173296.0631144,
+  "type": "agent.decision",
+  "agent_id": "char_marg",
+  "payload": {
+   "action": "ignore",
+   "say": "Steady now. Good ideas don't rush.",
+   "reason": "Things worth having should outlast you."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 74,
+  "ts": 1760173296.5,
+  "type": "world.event",
+  "agent_id": null,
+  "payload": {
+   "kind": "constraint",
+   "text": "It has to work with no electricity"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 75,
+  "ts": 1760173299.0239046,
+  "type": "agent.decision",
+  "agent_id": "char_ines",
+  "payload": {
+   "action": "twist",
+   "say": "Checklist first. Then we talk.",
+   "reason": "Nothing is safe until it has been checked twice.",
+   "target_branch": "br_010"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 76,
+  "ts": 1760173299.1239045,
+  "type": "branch.created",
+  "agent_id": "char_ines",
+  "payload": {
+   "branch_id": "br_016",
+   "parent_ids": [
+    "br_010"
+   ],
+   "op": "twist",
+   "authors": [
+    "char_ines"
+   ],
+   "text": "a coffee subscription with a backup supplier for every single step"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 77,
+  "ts": 1760173299.2239046,
+  "type": "endorse",
+  "agent_id": "char_ines",
+  "payload": {
+   "branch_id": "br_016"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 78,
+  "ts": 1760173302.408018,
+  "type": "agent.decision",
+  "agent_id": "char_priya",
+  "payload": {
+   "action": "twist",
+   "say": "Ship it Friday, fix it Monday.",
+   "reason": "If it can't reach a billion people it's a hobby.",
+   "target_branch": "br_011"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 79,
+  "ts": 1760173302.508018,
+  "type": "branch.created",
+  "agent_id": "char_priya",
+  "payload": {
+   "branch_id": "br_017",
+   "parent_ids": [
+    "br_011"
+   ],
+   "op": "twist",
+   "authors": [
+    "char_priya"
+   ],
+   "text": "a coffee subscription with a referral loop that pays you in product"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 80,
+  "ts": 1760173306.2363095,
+  "type": "agent.decision",
+  "agent_id": "char_priya",
+  "payload": {
+   "action": "back",
+   "say": "Artisanal is a polite word for small.",
+   "reason": "If it can't reach a billion people it's a hobby.",
+   "target_branch": "br_003"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 81,
+  "ts": 1760173306.3863096,
+  "type": "unendorse",
+  "agent_id": "char_priya",
+  "payload": {
+   "branch_id": "br_002"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 82,
+  "ts": 1760173306.4363096,
+  "type": "endorse",
+  "agent_id": "char_priya",
+  "payload": {
+   "branch_id": "br_003"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 83,
+  "ts": 1760173309.628703,
+  "type": "agent.decision",
+  "agent_id": "char_ines",
+  "payload": {
+   "action": "back",
+   "say": "What's the fallback if that fails?",
+   "reason": "Nothing is safe until it has been checked twice.",
+   "target_branch": "br_012"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 84,
+  "ts": 1760173309.8287032,
+  "type": "endorse",
+  "agent_id": "char_ines",
+  "payload": {
+   "branch_id": "br_012"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 85,
+  "ts": 1760173313.172579,
+  "type": "agent.decision",
+  "agent_id": "char_priya",
+  "payload": {
+   "action": "back",
+   "say": "Ship it Friday, fix it Monday.",
+   "reason": "If it can't reach a billion people it's a hobby.",
+   "target_branch": "br_011"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 86,
+  "ts": 1760173313.322579,
+  "type": "unendorse",
+  "agent_id": "char_priya",
+  "payload": {
+   "branch_id": "br_001"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 87,
+  "ts": 1760173313.372579,
+  "type": "endorse",
+  "agent_id": "char_priya",
+  "payload": {
+   "branch_id": "br_011"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 88,
+  "ts": 1760173316.445463,
+  "type": "agent.decision",
+  "agent_id": "char_priya",
+  "payload": {
+   "action": "trash",
+   "say": "This is a feature, not a company.",
+   "reason": "If it can't reach a billion people it's a hobby.",
+   "target_branch": "br_008"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 89,
+  "ts": 1760173320.0821288,
+  "type": "agent.decision",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "action": "trash",
+   "say": "Lights down. Box opens. Everyone gasps.",
+   "reason": "Every product is secretly a ritual.",
+   "target_branch": "br_017"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 90,
+  "ts": 1760173323.0676925,
+  "type": "agent.decision",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "action": "back",
+   "say": "Where's the ceremony? Where's the moment?",
+   "reason": "Every product is secretly a ritual.",
+   "target_branch": "br_009"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 91,
+  "ts": 1760173323.2176924,
+  "type": "unendorse",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "branch_id": "br_007"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 92,
+  "ts": 1760173323.2676923,
+  "type": "endorse",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "branch_id": "br_009"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 93,
+  "ts": 1760173326.0121725,
+  "type": "agent.decision",
+  "agent_id": "char_dez",
+  "payload": {
+   "action": "pitch",
+   "say": "Cut a stop and it's twice as fast.",
+   "reason": "Every problem is really a logistics problem.",
+   "target_branch": "br_015"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 94,
+  "ts": 1760173329.629304,
+  "type": "agent.decision",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "action": "ignore",
+   "say": "Even cancelling should feel like a farewell.",
+   "reason": "Every product is secretly a ritual."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 95,
+  "ts": 1760173331.7903802,
+  "type": "agent.decision",
+  "agent_id": "char_anselm",
+  "payload": {
+   "action": "twist",
+   "say": "Ten years from now, will anyone remember it?",
+   "reason": "Anything worth doing takes ten years.",
+   "target_branch": "br_010"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 96,
+  "ts": 1760173331.8903804,
+  "type": "branch.created",
+  "agent_id": "char_anselm",
+  "payload": {
+   "branch_id": "br_018",
+   "parent_ids": [
+    "br_010"
+   ],
+   "op": "twist",
+   "authors": [
+    "char_anselm"
+   ],
+   "text": "a coffee subscription that only ships at harvest, once a season"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 97,
+  "ts": 1760173331.9403803,
+  "type": "unendorse",
+  "agent_id": "char_anselm",
+  "payload": {
+   "branch_id": "br_001"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 98,
+  "ts": 1760173331.9903803,
+  "type": "endorse",
+  "agent_id": "char_anselm",
+  "payload": {
+   "branch_id": "br_018"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 99,
+  "ts": 1760173335.7608783,
+  "type": "agent.decision",
+  "agent_id": "char_priya",
+  "payload": {
+   "action": "merge",
+   "say": "I'm backing the one with network effects.",
+   "reason": "If it can't reach a billion people it's a hobby.",
+   "target_branch": "br_012"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 100,
+  "ts": 1760173335.8608782,
+  "type": "branch.created",
+  "agent_id": "char_priya",
+  "payload": {
+   "branch_id": "br_019",
+   "parent_ids": [
+    "br_012",
+    "br_003"
+   ],
+   "op": "merge",
+   "authors": [
+    "char_priya"
+   ],
+   "text": "a coffee subscription that runs on a printed checklist anyone can follow, combined with a coffee subscription as a platform where anyone can be a supplier"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 101,
+  "ts": 1760173339.430176,
+  "type": "agent.decision",
+  "agent_id": "char_anselm",
+  "payload": {
+   "action": "merge",
+   "say": "Speed is the enemy of meaning.",
+   "reason": "Anything worth doing takes ten years.",
+   "target_branch": "br_007"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 102,
+  "ts": 1760173339.530176,
+  "type": "branch.created",
+  "agent_id": "char_anselm",
+  "payload": {
+   "branch_id": "br_020",
+   "parent_ids": [
+    "br_007",
+    "br_016"
+   ],
+   "op": "merge",
+   "authors": [
+    "char_anselm",
+    "char_ines"
+   ],
+   "text": "a coffee subscription with a farewell ceremony when you cancel, combined with a coffee subscription with a backup supplier for every single step"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 103,
+  "ts": 1760173343.2081978,
+  "type": "agent.decision",
+  "agent_id": "char_marg",
+  "payload": {
+   "action": "trash",
+   "say": "Needs a battery? Then it's already broken.",
+   "reason": "Things worth having should outlast you.",
+   "target_branch": "br_003"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 104,
+  "ts": 1760173346.809845,
+  "type": "agent.decision",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "action": "back",
+   "say": "I'll back anything with a candle in it.",
+   "reason": "Every product is secretly a ritual.",
+   "target_branch": "br_003"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 105,
+  "ts": 1760173346.959845,
+  "type": "unendorse",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "branch_id": "br_013"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 106,
+  "ts": 1760173347.009845,
+  "type": "endorse",
+  "agent_id": "char_tamsin",
+  "payload": {
+   "branch_id": "br_003"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 107,
+  "ts": 1760173350.2594423,
+  "type": "agent.decision",
+  "agent_id": "char_dez",
+  "payload": {
+   "action": "ignore",
+   "say": "Cool idea. How does it get to the door?",
+   "reason": "Every problem is really a logistics problem."
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 108,
+  "ts": 1760173352.5617437,
+  "type": "agent.decision",
+  "agent_id": "char_marg",
+  "payload": {
+   "action": "trash",
+   "say": "Build it to last fifty years or don't build it.",
+   "reason": "Things worth having should outlast you.",
+   "target_branch": "br_020"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 109,
+  "ts": 1760173356.2147648,
+  "type": "agent.decision",
+  "agent_id": "char_marg",
+  "payload": {
+   "action": "pitch",
+   "say": "Needs a battery? Then it's already broken.",
+   "reason": "Things worth having should outlast you.",
+   "target_branch": "br_005"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 110,
+  "ts": 1760173359.312085,
+  "type": "agent.decision",
+  "agent_id": "char_dez",
+  "payload": {
+   "action": "back",
+   "say": "Same doorstep, same minute. That's trust.",
+   "reason": "Every problem is really a logistics problem.",
+   "target_branch": "br_004"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 111,
+  "ts": 1760173359.4620848,
+  "type": "unendorse",
+  "agent_id": "char_dez",
+  "payload": {
+   "branch_id": "br_001"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 112,
+  "ts": 1760173359.5120847,
+  "type": "endorse",
+  "agent_id": "char_dez",
+  "payload": {
+   "branch_id": "br_004"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 113,
+  "ts": 1760173362.365247,
+  "type": "agent.decision",
+  "agent_id": "char_dez",
+  "payload": {
+   "action": "back",
+   "say": "No route, no deal.",
+   "reason": "Every problem is really a logistics problem.",
+   "target_branch": "br_007"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 114,
+  "ts": 1760173362.5152469,
+  "type": "unendorse",
+  "agent_id": "char_dez",
+  "payload": {
+   "branch_id": "br_006"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 115,
+  "ts": 1760173362.5652468,
+  "type": "endorse",
+  "agent_id": "char_dez",
+  "payload": {
+   "branch_id": "br_007"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 116,
+  "ts": 1760173364.4212344,
+  "type": "agent.decision",
+  "agent_id": "char_dez",
+  "payload": {
+   "action": "back",
+   "say": "No route, no deal.",
+   "reason": "Every problem is really a logistics problem.",
+   "target_branch": "br_019"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 117,
+  "ts": 1760173364.5712345,
+  "type": "unendorse",
+  "agent_id": "char_dez",
+  "payload": {
+   "branch_id": "br_004"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 118,
+  "ts": 1760173364.6212344,
+  "type": "endorse",
+  "agent_id": "char_dez",
+  "payload": {
+   "branch_id": "br_019"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 119,
+  "ts": 1760173367.073213,
+  "type": "agent.decision",
+  "agent_id": "char_priya",
+  "payload": {
+   "action": "back",
+   "say": "This is a feature, not a company.",
+   "reason": "If it can't reach a billion people it's a hobby.",
+   "target_branch": "br_002"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 120,
+  "ts": 1760173367.223213,
+  "type": "unendorse",
+  "agent_id": "char_priya",
+  "payload": {
+   "branch_id": "br_003"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 121,
+  "ts": 1760173367.273213,
+  "type": "endorse",
+  "agent_id": "char_priya",
+  "payload": {
+   "branch_id": "br_002"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 122,
+  "ts": 1760173370.8932471,
+  "type": "agent.decision",
+  "agent_id": "char_ines",
+  "payload": {
+   "action": "merge",
+   "say": "Clear to proceed.",
+   "reason": "Nothing is safe until it has been checked twice.",
+   "target_branch": "br_019"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 123,
+  "ts": 1760173370.993247,
+  "type": "branch.created",
+  "agent_id": "char_ines",
+  "payload": {
+   "branch_id": "br_021",
+   "parent_ids": [
+    "br_019",
+    "br_017"
+   ],
+   "op": "merge",
+   "authors": [
+    "char_ines",
+    "char_priya"
+   ],
+   "text": "a coffee subscription that runs on a printed checklist anyone can follow, combined with a coffee subscription as a platform where anyone can be a supplier, combined with a coffee subscription with a referral loop that pays you in product"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 124,
+  "ts": 1760173373.7345037,
+  "type": "agent.decision",
+  "agent_id": "char_priya",
+  "payload": {
+   "action": "back",
+   "say": "This is a feature, not a company.",
+   "reason": "If it can't reach a billion people it's a hobby.",
+   "target_branch": "br_017"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 125,
+  "ts": 1760173373.8845036,
+  "type": "unendorse",
+  "agent_id": "char_priya",
+  "payload": {
+   "branch_id": "br_011"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 126,
+  "ts": 1760173373.9345036,
+  "type": "endorse",
+  "agent_id": "char_priya",
+  "payload": {
+   "branch_id": "br_017"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 127,
+  "ts": 1760173376.7555976,
+  "type": "agent.decision",
+  "agent_id": "char_marg",
+  "payload": {
+   "action": "trash",
+   "say": "That one sinks in the first storm.",
+   "reason": "Things worth having should outlast you.",
+   "target_branch": "br_001"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 128,
+  "ts": 1760173380.3076756,
+  "type": "agent.decision",
+  "agent_id": "char_dez",
+  "payload": {
+   "action": "back",
+   "say": "I'll carry that one. It has a plan.",
+   "reason": "Every problem is really a logistics problem.",
+   "target_branch": "br_020"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 129,
+  "ts": 1760173380.4576757,
+  "type": "unendorse",
+  "agent_id": "char_dez",
+  "payload": {
+   "branch_id": "br_007"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 130,
+  "ts": 1760173380.5076756,
+  "type": "endorse",
+  "agent_id": "char_dez",
+  "payload": {
+   "branch_id": "br_020"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 131,
+  "ts": 1760173383.7580621,
+  "type": "agent.decision",
+  "agent_id": "char_priya",
+  "payload": {
+   "action": "back",
+   "say": "Artisanal is a polite word for small.",
+   "reason": "If it can't reach a billion people it's a hobby.",
+   "target_branch": "br_017"
+  }
+ },
+ {
+  "run_id": "run_fixture",
+  "seq": 132,
+  "ts": 1760173386.5,
+  "type": "run.ended",
+  "agent_id": null,
+  "payload": {
+   "finalists": [
+    {
+     "branch_id": "br_002",
+     "text": "a coffee subscription in returnable jars that cycle like a reef",
+     "champions": [
+      "char_anselm",
+      "char_priya"
+     ],
+     "minority_report": "It throws away more than it delivers."
+    },
+    {
+     "branch_id": "br_001",
+     "text": "a coffee subscription where neighbors relay each other's deliveries",
+     "champions": [
+      "char_marg"
+     ],
+     "minority_report": "Nobody has said how it gets to the door."
+    },
+    {
+     "branch_id": "br_003",
+     "text": "a coffee subscription as a platform where anyone can be a supplier",
+     "champions": [
+      "char_tamsin"
+     ],
+     "minority_report": "There is no moment in it anyone would remember."
+    }
+   ],
+   "baseline": [
+    "a coffee subscription with personalized picks chosen by AI",
+    "a coffee subscription with a loyalty program and member rewards",
+    "a coffee subscription for offices, billed per team"
+   ]
+  }
+ }
+]

@@ -23,6 +23,7 @@ These hold for every phase, so no phase has to re-decide them.
 | UI | Vite, React and TypeScript on port 5173, with three.js through react-three-fiber and drei, and d3 for the tree |
 | UI state | One reducer that turns events into town state, fed by one WebSocket. The reducer has unit tests |
 | Models | The KayKit glTF files already in `ui/public/models/` |
+| Starting it | Three terminals: `.venv/bin/uvicorn observer.app:app --port 8100`, `.venv/bin/uvicorn observer.mock_world:app --port 8200`, and `npm --prefix ui run dev`, then open http://localhost:5173. `.claude/launch.json` has the same three, but the desktop app couldn't start the Python ones because macOS blocked it from reading `.venv`, so start those from a terminal |
 
 ## Event contract
 

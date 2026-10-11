@@ -21,6 +21,7 @@ export interface Persona {
   one_liner: string;
   traits: Traits;
   model?: string | null;
+  lineage?: { generation: number; designed_by: string[]; replaces: string | null };
   worldview?: string;
   loves?: string[];
   hates?: string[];

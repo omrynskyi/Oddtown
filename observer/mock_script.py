@@ -271,3 +271,21 @@ def run_timeline(seed: str, rng_seed: int = 7) -> list[Step]:
     baseline = [idea.format(seed=seed) for idea in BASELINE]
     steps.append((RUN_LENGTH, "run.ended", None, {"finalists": finalists, "baseline": baseline}))
     return sorted(steps, key=lambda step: step[0])
+
+
+def full_run(run_id: str, seed: str, rng_seed: int = 7, start_ts: float = 1760173200.0) -> list[dict]:
+    """A whole mock run as stored events, with seq and ts, as the UI receives them."""
+    prepare = prepare_timeline(seed)
+    ready_at = prepare[-1][0] + 2.0
+    steps = prepare + [(ready_at + t, *rest) for t, *rest in run_timeline(seed, rng_seed)]
+    return [
+        {"run_id": run_id, "seq": seq, "ts": start_ts + t, "type": type, "agent_id": agent_id, "payload": payload}
+        for seq, (t, type, agent_id, payload) in enumerate(steps, start=1)
+    ]
+
+
+if __name__ == "__main__":
+    # Writes the UI's test fixture: python -m observer.mock_script > ui/src/fixtures/mock-run.json
+    import json
+
+    print(json.dumps(full_run("run_fixture", "a coffee subscription"), indent=1))

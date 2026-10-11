@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "observer",
+      "runtimeExecutable": ".venv/bin/uvicorn",
+      "runtimeArgs": ["observer.app:app", "--port", "8100"],
+      "port": 8100
+    },
+    {
+      "name": "mock-world",
+      "runtimeExecutable": ".venv/bin/uvicorn",
+      "runtimeArgs": ["observer.mock_world:app", "--port", "8200"],
+      "port": 8200
+    },
+    {
+      "name": "ui",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "ui", "run", "dev"],
+      "port": 5173
+    }
+  ]
+}
