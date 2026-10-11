@@ -278,6 +278,11 @@ class Character:
         elif kind == AGENT_LAST_WORDS:
             self.mark_dead(sender)
             self.memory.add(f'{who} died. Last words: "{clip(body.get("text"), 150)}"', "death")
+        elif kind == "human.request.result":
+            # The world tells us which request_id its answer will carry.
+            for review in self.pending_reviews:
+                if review.get("ref") and review["ref"] == body.get("ref"):
+                    review["request_id"] = body.get("request_id")
         elif kind == SPAWN_RESULT:
             if not body.get("ok"):
                 log.warning("the world couldn't start a newcomer: %s", body.get("error"))
@@ -303,7 +308,7 @@ class Character:
             self.memory.add(f'Customer feedback from the world: "{clip(text, 150)}"', "world")
         elif kind == "human.answer":
             self.memory.add(f'A human answered a question to the town: "{clip(text, 150)}"', "human")
-            self.on_human_answer(text)
+            self.on_human_answer(text, body.get("request_id"))
         else:
             return
         self.news = True
@@ -832,8 +837,9 @@ class Character:
             return
         if not ok:
             # A human approves or skips it. The answer comes back as a world.event human.answer.
-            self.pending_reviews.append({"persona": persona, "replaces": body["replaces"]})
-            await self.send(world, HUMAN_REQUEST, {"kind": "persona_review", "persona": persona, "flagged": clip(reason, 300)}, observe=False)
+            ref = uuid.uuid4().hex
+            self.pending_reviews.append({"persona": persona, "replaces": body["replaces"], "ref": ref, "request_id": None})
+            await self.send(world, HUMAN_REQUEST, {"kind": "persona_review", "ref": ref, "persona": persona, "flagged": clip(reason, 300)}, observe=False)
             return
         await self.spawn_newcomer(persona)
 
@@ -843,11 +849,12 @@ class Character:
             self.memory.add(f"You brought {persona['name']} to life", "replacement")
             self.emit("replace.step", {"step": "birth", "replaces": persona["lineage"]["replaces"], "persona": persona})
 
-    def on_human_answer(self, text: str) -> None:
-        """We never learn the request_id the world assigned to our request, so the oldest review takes the answer."""
-        if not self.pending_reviews:
-            return
-        review = self.pending_reviews.pop(0)
+    def on_human_answer(self, text: str, request_id: str | None = None) -> None:
+        """Only the review the answer was for takes it. The world told us its request_id after we asked."""
+        review = next((r for r in self.pending_reviews if request_id and r.get("request_id") == request_id), None)
+        if review is None:
+            return  # an answer to someone else's question
+        self.pending_reviews.remove(review)
         if text.strip().lower().startswith(("approve", "yes", "ok", "allow")):
             self.spawn(self.spawn_newcomer(review["persona"]))
 

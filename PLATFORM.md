@@ -48,7 +48,7 @@ await town.leave()  # on death, after broadcasting agent.last_words
 ```
 
 - `handler(envelope)` runs once per incoming message, after it has been acked. `send` and `broadcast` fill in `msg_id`, `from`, `to` and `sent_at`.
-- A bounced send deletes the dead peer's record before it raises, so the next `characters()` no longer lists it. Catch `DeadPeerError` there to do the replacement pick.
+- A bounced send deletes the dead peer's record before it raises, so the next `characters()` no longer lists it. Catch `DeadPeerError` there to do the replacement pick. The world service never deletes a crashed character's record, so a crash is always left for a character to notice.
 - Exit the process after `leave()`. Exit code 0 reads as a death, anything else as a crash.
 - Your agents emit `agent.died` with `picked` themselves, through `observer.client`. The world service doesn't.
 
@@ -58,7 +58,7 @@ Messages your agents send to the world service, which is the record with `kind =
 | --- | --- | --- |
 | `spawn.request` | `{"persona": {...}}`, with a unique `id` | The world starts the newcomer and replies `spawn.result` with `ok` |
 | `usage.report` | `{"tokens": 1234}` | Counts toward the token budget |
-| `human.request` | `{"kind": "...", ...}` | Shows up as a card in the UI. The answer comes back as a `world.event` broadcast with `kind: "human.answer"` |
+| `human.request` | `{"kind": "...", "ref"?, ...}` | Shows up as a card in the UI. The world replies `human.request.result` with `request_id` and your `ref`, and the answer comes back as a `world.event` broadcast with `kind: "human.answer"` and that `request_id` |
 
 `world.event` broadcasts have `kind` set to `seed`, `constraint`, `feedback`, `human.answer` or `stop`. On `stop`, call `leave()` and exit.
 
@@ -76,7 +76,7 @@ Finalists come from public broadcasts. `endorse` and `unendorse` carry `{"branch
 | `POST /runs/{run_id}/stop` | Ends the run now and returns the result |
 | `GET /runs/{run_id}` | State (`preparing`, `ready`, `running`, `ending`, `ended` or `failed`), living characters, endorsements, human requests, and the result once it's over |
 
-Everything the world emits goes through `observer.client` and passes your contract. That covers `run.created`, `agent.born` (newcomers add `requested_by`), `run.ready`, `run.started`, `world.event`, `branch.created` for the seed, and `run.ended`. `run.ended` has `baseline: []` until Anthony's baseline exists, plus extra fields: `support`, `reasons` and `minority_report_by` on each finalist, and `reason`, `ties` and `living` on the payload. It also emits types your contract doesn't model: `agent.crashed`, `agent.exited`, `agent.bounced`, `human.request` and `human.answer`.
+Everything the world emits goes through `observer.client` and passes your contract. That covers `run.created`, `agent.born` (newcomers add `requested_by`), `run.ready`, `run.started`, `world.event`, `branch.created` for the seed, and `run.ended`. `run.ended` carries `baseline`, one LLM's three ideas from `agents/baseline.py` (started at `/start`, rerun at the end if constraints arrived), plus extra fields: `support`, `reasons` and `minority_report_by` on each finalist, and `reason`, `ties` and `living` on the payload. It also emits types your contract doesn't model: `agent.crashed`, `agent.exited`, `human.request` and `human.answer`.
 
 The world doesn't emit `agent.died`, because only the dying agent knows who it `picked`. Stopping a run isn't a `world.event` either, because your contract only allows `seed`, `constraint` and `feedback`. Add `stop` to it if the UI should show one.
 

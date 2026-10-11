@@ -59,11 +59,8 @@ Everything goes through `observer.client`, so it passes `observer/events.py`.
 | --- | --- |
 | `usage.report` | `tokens` (all input plus output), and the breakdown, after every LLM call |
 | `spawn.request` | `persona`, with its `briefing` |
-| `human.request` | `kind` `rule_break` or `feasibility` with `branch_id` and `claim`, or `kind` `persona_review` with `persona` and `flagged` when a newcomer fails the content check |
+| `human.request` | `kind` `rule_break` or `feasibility` with `branch_id` and `claim`, or `kind` `persona_review` with `persona` and `flagged` when a newcomer fails the content check. An optional `ref` comes back in the world's `human.request.result` reply, along with the `request_id` the answer will carry |
 
 ## Still open
 
-- **Clara:** `run.ended` has `baseline: []`. `await agents.baseline.run_baseline(seed, constraints)` returns the three ideas. Starting it at `/start` and awaiting it at the end hides its latency.
-- **Clara:** the `human.answer` broadcast carries `request_id`, but the character that sent the request never learns the id the world assigned. So for now a persona review takes the oldest pending answer. Replying to `human.request` with its `request_id` would fix it.
-- **Clara:** when the world's own broadcast notices a crash first, it deletes the record, and no character does the replacement pick.
 - **Oleg:** `agent.died` after a crash has the real `picked` list plus `noticed_by`, rather than an empty list.

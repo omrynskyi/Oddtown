@@ -141,3 +141,19 @@ async def test_registry_search_filters_and_replaces(tmp_path):
         assert [r["id"] for r in await registry.search()] == ["y"]
         with pytest.raises(ValueError):
             await registry.register({"id": "z"})
+
+
+async def test_town_that_does_not_forget_dead_peers_keeps_their_records(tmp_path):
+    from transport.town import Town
+
+    a = Town("world", LocalTransport("world"), MemoryRegistry(), forget_dead=False)
+    await a.join({"kind": "world"}, lambda e: asyncio.sleep(0))
+    b, _ = await spawn("local", tmp_path, "char_b")
+    await b.transport.close()  # crash
+    try:
+        assert await a.broadcast({"type": "world.event", "body": {}}) == ["char_b"]
+        with pytest.raises(DeadPeerError):
+            await a.send("char_b", {"type": "x", "body": {}})
+        assert await a.registry.get("char_b") is not None
+    finally:
+        await a.leave()

@@ -22,17 +22,21 @@ def now_iso() -> str:
 
 
 class Town:
-    def __init__(self, agent_id: str, transport: Transport, registry: Registry):
+    def __init__(self, agent_id: str, transport: Transport, registry: Registry, forget_dead: bool = True):
         self.agent_id = agent_id
         self.transport = transport
         self.registry = registry
+        # Characters delete a dead peer's record when a send bounces, and the one
+        # that does it runs the replacement pick. The world service turns this off,
+        # so it never beats a character to a crash and leaves the town a member short.
+        self.forget_dead = forget_dead
 
     @classmethod
-    def from_env(cls, agent_id: str) -> "Town":
+    def from_env(cls, agent_id: str, forget_dead: bool = True) -> "Town":
         from registry.adapter import create_registry
         from transport.adapter import create_transport
 
-        return cls(agent_id, create_transport(agent_id), create_registry())
+        return cls(agent_id, create_transport(agent_id), create_registry(), forget_dead=forget_dead)
 
     async def join(self, record: Record, handler: Handler) -> None:
         """Start receiving, then publish this agent's record with its address."""
@@ -68,6 +72,8 @@ class Town:
         return stamped
 
     async def _forget(self, peer: str) -> None:
+        if not self.forget_dead:
+            return
         try:
             await self.registry.remove(peer)
         except Exception:
