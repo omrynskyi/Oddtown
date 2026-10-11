@@ -28,6 +28,13 @@ SAMPLE_PAYLOADS = {
         "finalists": [{"branch_id": "br_042", "text": "Oak chest of beans", "champions": ["char_7f3a"], "minority_report": "No delivery plan"}],
         "baseline": ["Idea one", "Idea two", "Idea three"],
     },
+    "run.summary": {
+        "headline": "The town wants a chest that lasts.",
+        "verdicts": [{"branch_id": "br_042", "title": "The oak chest", "why": "Everyone remembers it", "risk": "Shipping"}],
+        "buckets": [{"name": "Built to last", "emoji": "🌳", "blurb": "Things you keep", "branch_ids": ["br_042"]}],
+        "moments": ["Dez twisted it into a chest."],
+        "baseline": ["Idea one"],
+    },
 }
 
 

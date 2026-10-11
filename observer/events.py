@@ -104,6 +104,32 @@ class RunEnded(Payload):
     baseline: list[str]
 
 
+class Verdict(Payload):
+    branch_id: str
+    title: str
+    why: str = ""
+    risk: str = ""
+
+
+class Bucket(Payload):
+    name: str
+    emoji: str = ""
+    blurb: str = ""
+    branch_ids: list[str]
+
+
+class RunSummary(Payload):
+    """The observer's own end-of-run summary. On a failed call only `error` is set."""
+
+    headline: str = ""
+    verdicts: list[Verdict] = Field(default_factory=list, max_length=3)
+    buckets: list[Bucket] = Field(default_factory=list)
+    moments: list[str] = Field(default_factory=list)
+    baseline: list[str] = Field(default_factory=list)
+    model: str | None = None
+    error: str | None = None
+
+
 PAYLOADS: dict[str, type[Payload]] = {
     "run.created": RunCreated,
     "agent.born": AgentBorn,
@@ -117,6 +143,7 @@ PAYLOADS: dict[str, type[Payload]] = {
     "agent.last_words": AgentLastWords,
     "agent.died": AgentDied,
     "run.ended": RunEnded,
+    "run.summary": RunSummary,
 }
 
 
