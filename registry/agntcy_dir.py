@@ -29,6 +29,12 @@ log = logging.getLogger(__name__)
 QUERY = search_v1.RecordQueryType
 OASF_SCHEMA_VERSION = "1.0.0"
 SEARCH_LIMIT = 500
+RETRY_DELAYS = (0.2, 0.5, 1.0, 2.0)
+
+
+def _transient(exc: Exception) -> bool:
+    text = str(exc)
+    return "UNAVAILABLE" in text or "DEADLINE_EXCEEDED" in text or "Connection reset" in text
 
 
 class AgntcyDirectory(Registry):
@@ -40,9 +46,19 @@ class AgntcyDirectory(Registry):
         self._lock = asyncio.Lock()
 
     async def _call(self, fn, *args):
-        if self._client is None:
-            self._client = await asyncio.to_thread(Client, Config(server_address=self.address))
-        return await asyncio.to_thread(fn, *args)
+        # The Directory drops connections now and then when many agents hit it at
+        # once (gRPC UNAVAILABLE). Those are safe to retry with a fresh client.
+        for attempt, delay in enumerate(RETRY_DELAYS):
+            if self._client is None:
+                self._client = await asyncio.to_thread(Client, Config(server_address=self.address))
+            try:
+                return await asyncio.to_thread(fn, *args)
+            except Exception as exc:
+                if not _transient(exc) or attempt == len(RETRY_DELAYS) - 1:
+                    raise
+                log.debug("directory call failed, retrying: %s", exc)
+                self._client = None
+                await asyncio.sleep(delay)
 
     def _name(self, agent_id: str) -> str:
         return f"oddtown/{self.town}/{agent_id}"

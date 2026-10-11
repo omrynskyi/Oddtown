@@ -8,13 +8,15 @@ How characters talk, find each other, get born and die. Owned by Clara.
 cp .env.example .env
 docker compose up -d --wait
 uv venv --python 3.12 && uv pip install -r requirements.txt
-.venv/bin/python -m world.service --port 8100
+.venv/bin/uvicorn observer.app:app --port 8100
+.venv/bin/python -m world.service --port 8200
 ```
 
-Then start a run. With no `cast`, it uses `personas/starting_cast.json`.
+The UI talks to the world service on 8200 and the observer on 8100. To start a run without the UI (with no `cast`, it uses `personas/starting_cast.json`):
 
 ```bash
-curl -X POST localhost:8100/run -H 'content-type: application/json' -d '{"seed": "a coffee subscription"}'
+curl -X POST localhost:8200/runs -H 'content-type: application/json' -d '{"seed": "a coffee subscription"}'
+curl -X POST localhost:8200/runs/<run_id>/start
 ```
 
 No Docker? Set `TRANSPORT=http` and `REGISTRY=file` in `.env`. Everything works the same on one machine.
@@ -48,6 +50,7 @@ await town.leave()  # on death, after broadcasting agent.last_words
 - `handler(envelope)` runs once per incoming message, after it has been acked. `send` and `broadcast` fill in `msg_id`, `from`, `to` and `sent_at`.
 - A bounced send deletes the dead peer's record before it raises, so the next `characters()` no longer lists it. Catch `DeadPeerError` there to do the replacement pick.
 - Exit the process after `leave()`. Exit code 0 reads as a death, anything else as a crash.
+- Your agents emit `agent.died` with `picked` themselves, through `observer.client`. The world service doesn't.
 
 Messages your agents send to the world service, which is the record with `kind == "world"`:
 
@@ -65,14 +68,17 @@ Finalists come from public broadcasts. `endorse` and `unendorse` carry `{"branch
 
 | Call | Does |
 | --- | --- |
-| `POST /run` `{"seed", "cast"?, "time_budget_s"?, "token_budget"?}` | Launches the cast, waits for everyone to join, broadcasts the seed |
-| `POST /run/inject` `{"kind": "constraint", "text"}` | Broadcasts a world event |
-| `POST /run/human/{request_id}/answer` `{"answer"}` | Answers a human request |
-| `POST /run/agents/{id}/kill` | SIGKILLs a character for the crash demo |
-| `POST /run/stop` | Ends the run now and returns the result |
-| `GET /run` | State, living characters, endorsements, human requests, and the result once it has ended |
+| `POST /runs` `{"seed", "cast"?, "time_budget_s"?, "token_budget"?}` | Returns `{run_id}` right away, launches the cast, emits `run.created`, one `agent.born` per character as it joins, then `run.ready` |
+| `POST /runs/{run_id}/start` | Once ready: broadcasts the seed with its `br_seed` branch, emits `run.started`, `world.event` and `branch.created` |
+| `POST /runs/{run_id}/inject` `{"kind": "constraint" or "feedback", "text"}` | Broadcasts a world event |
+| `POST /runs/{run_id}/human/{request_id}/answer` `{"answer"}` | Answers a human request |
+| `POST /runs/{run_id}/agents/{id}/kill` | SIGKILLs a character for the crash demo |
+| `POST /runs/{run_id}/stop` | Ends the run now and returns the result |
+| `GET /runs/{run_id}` | State (`preparing`, `ready`, `running`, `ending`, `ended` or `failed`), living characters, endorsements, human requests, and the result once it's over |
 
-The world emits these observer events: `run.started`, `world.event`, `agent.died`, `agent.spawned`, `agent.crashed`, `agent.exited`, `agent.bounced`, `human.request`, `human.answer` and `run.ended`. `run.ended` carries `finalists` (with `branch`, `support`, `champions` and `minority_report`) and `ties`. `observer/events.py` is a stub that writes JSONL to `OBSERVER_LOG` until your real client replaces it.
+Everything the world emits goes through `observer.client` and passes your contract. That covers `run.created`, `agent.born` (newcomers add `requested_by`), `run.ready`, `run.started`, `world.event`, `branch.created` for the seed, and `run.ended`. `run.ended` has `baseline: []` until Anthony's baseline exists, plus extra fields: `support`, `reasons` and `minority_report_by` on each finalist, and `reason`, `ties` and `living` on the payload. It also emits types your contract doesn't model: `agent.crashed`, `agent.exited`, `agent.bounced`, `human.request` and `human.answer`.
+
+The world doesn't emit `agent.died`, because only the dying agent knows who it `picked`. Stopping a run isn't a `world.event` either, because your contract only allows `seed`, `constraint` and `feedback`. Add `stop` to it if the UI should show one.
 
 ## Tests
 
@@ -80,4 +86,4 @@ The world emits these observer events: `run.started`, `world.event`, `agent.died
 .venv/bin/python -m pytest -q
 ```
 
-Each check runs on `http+file` and on `slim+agntcy`. The SLIM and Directory cases are skipped if `docker compose` isn't up. `tests/fake_character.py` is a scripted character that stands in for the real one.
+Each check runs on `http+file` and on `slim+agntcy`. The SLIM and Directory cases are skipped if `docker compose` isn't up. The world tests start the real observer and check that every event passes its contract. This also runs Oleg's `observer/tests`. `tests/fake_character.py` is a scripted character that stands in for the real one.

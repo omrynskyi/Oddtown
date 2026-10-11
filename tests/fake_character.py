@@ -20,13 +20,14 @@ import json
 import os
 import sys
 
-from observer.events import emit
+from observer.client import aemit, emit
 from transport.adapter import DeadPeerError
 from transport.town import Town
 
 
 async def main() -> None:
     agent_id = os.environ["AGENT_ID"]
+    run_id = os.environ["RUN_ID"]
     persona = json.loads(open(os.environ["PERSONA_FILE"]).read())
     script = persona.get("script", {})
     town = Town.from_env(agent_id)
@@ -38,7 +39,7 @@ async def main() -> None:
         tasks.add(task)
         task.add_done_callback(tasks.discard)
         task.add_done_callback(lambda t: t.cancelled() or not t.exception() or emit(
-            "test.error", agent_id, {"error": repr(t.exception())}))
+            run_id, "test.error", {"error": repr(t.exception())}, agent_id))
 
     async def world_id() -> str:
         worlds = await town.registry.search(kind="world")
@@ -65,9 +66,9 @@ async def main() -> None:
             await asyncio.sleep(delay)
             try:
                 await town.send(peer, {"type": "idea.share", "body": {"text": "hello?"}})
-                emit("test.sent", agent_id, {"to": peer, "ok": True})
+                await aemit(run_id, "test.sent", {"to": peer, "ok": True}, agent_id)
             except DeadPeerError:
-                emit("test.sent", agent_id, {"to": peer, "ok": False})
+                await aemit(run_id, "test.sent", {"to": peer, "ok": False}, agent_id)
         if "rest_after" in script:
             await asyncio.sleep(script["rest_after"])
             await town.broadcast({"type": "rest", "body": {}})
@@ -76,7 +77,7 @@ async def main() -> None:
             await die()
 
     async def handler(envelope: dict):
-        emit("test.received", agent_id, envelope)
+        await aemit(run_id, "test.received", envelope, agent_id)
         body = envelope.get("body") or {}
         if envelope.get("type") == "world.event" and body.get("kind") == "seed":
             later(after_seed(body["text"]))
