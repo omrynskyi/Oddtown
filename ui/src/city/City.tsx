@@ -1,3 +1,4 @@
+import { Html } from "@react-three/drei";
 import { Canvas, useThree } from "@react-three/fiber";
 import { Suspense, useCallback, useLayoutEffect, useMemo, useState } from "react";
 import { Vector3 } from "three";
@@ -6,7 +7,7 @@ import type { Town } from "../town";
 import { Building } from "./Building";
 import { planCity, type CityPlan } from "./generate";
 import { BUILDING_HEIGHTS, TILE } from "./layout";
-import { HouseCards, HouseInspector, type Agreement, type CardItem, type HouseMessage } from "./HouseCards";
+import { HouseCards, type Agreement, type CardItem } from "./HouseCards";
 import { Model } from "./Model";
 import { TrafficCar } from "./TrafficCar";
 
@@ -14,7 +15,18 @@ import { TrafficCar } from "./TrafficCar";
 const BUILDING_HEIGHT = 3.1;
 
 /** The isometric city. Each run gets its own town, and each lot gets its character's building. */
-export function City({ town, trafficPaused = false }: { town: Town; trafficPaused?: boolean }) {
+export function City({
+  town,
+  trafficPaused = false,
+  selectedId,
+  onSelect,
+}: {
+  town: Town;
+  trafficPaused?: boolean;
+  /** The house whose resident is open in the side panel. */
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+}) {
   const plan = useMemo(() => planCity(town.runId ?? "town"), [town.runId]);
 
   // Characters are stored in birth order, dead ones included, so nobody's building ever changes.
@@ -27,7 +39,6 @@ export function City({ town, trafficPaused = false }: { town: Town; trafficPause
   const [faded, setFaded] = useState<ReadonlySet<string>>(new Set());
   const fade = useCallback((key: string) => setFaded((set) => new Set(set).add(key)), []);
   const [hoveredHouse, setHoveredHouse] = useState<string | null>(null);
-  const [selectedHouse, setSelectedHouse] = useState<string | null>(null);
 
   /** Where a character's roof is, for letters to leave from. */
   const roofOf = (id: string): [number, number, number] => {
@@ -57,31 +68,17 @@ export function City({ town, trafficPaused = false }: { town: Town; trafficPause
       .filter((item) => item.kind === "agree" && (item.from === id || item.to === id))
       .map((item) => ({ key: `agreement-${item.seq}` }));
 
-  /** Recent letters involving this home, newest first and split by direction in the inspector. */
-  const messagesFor = (id: string): HouseMessage[] =>
-    town.interactions
-      .filter((message) => message.from === id || message.to === id)
-      .sort((a, b) => b.seq - a.seq)
-      .map((message) => {
-        const outgoing = message.from === id;
-        const peerId = outgoing ? message.to : message.from;
-        return {
-          key: `message-${message.seq}`,
-          direction: outgoing ? "outgoing" : "incoming",
-          peer: shortName(town.characters[peerId].persona.name),
-          text: message.text,
-        };
-      });
-
   return (
     <Canvas
       orthographic
       shadows="percentage"
       flat
       dpr={[1, 2]}
+      // The selection outline masks itself with the stencil buffer.
+      gl={{ stencil: true }}
       camera={{ near: 0.1, far: 200 }}
       style={{ cursor: hoveredHouse ? "pointer" : "auto" }}
-      onPointerMissed={() => setSelectedHouse(null)}
+      onPointerMissed={() => onSelect(null)}
     >
       <IsometricCamera plan={plan} />
       <hemisphereLight args={["#ffffff", "#9aa3ad", 1.6]} />
@@ -111,10 +108,10 @@ export function City({ town, trafficPaused = false }: { town: Town; trafficPause
                 key={id}
                 model={buildings[id]}
                 lot={lot}
-                selected={selectedHouse === id}
+                selected={selectedId === id}
                 onHover={() => setHoveredHouse(id)}
                 onLeave={() => setHoveredHouse((current) => (current === id ? null : current))}
-                onSelect={() => setSelectedHouse(id)}
+                onSelect={() => onSelect(id)}
               />
             ) : (
               <Model key={`empty-${i}`} name={lot.model} position={lot.position} />
@@ -134,18 +131,18 @@ export function City({ town, trafficPaused = false }: { town: Town; trafficPause
             />
           );
         })}
-        {selectedHouse && (
-          <HouseInspector
-            position={roofOf(selectedHouse)}
-            persona={town.characters[selectedHouse].persona}
-            alive={town.characters[selectedHouse].alive}
-            bornSeq={town.characters[selectedHouse].bornSeq}
-            diedSeq={town.characters[selectedHouse].diedSeq}
-            currentSeq={town.lastSeq}
-            latestThought={town.speech[selectedHouse]?.text}
-            messages={messagesFor(selectedHouse)}
-            onClose={() => setSelectedHouse(null)}
-          />
+        {hoveredHouse && town.characters[hoveredHouse] && (
+          <Html
+            position={[
+              plan.lots[town.characters[hoveredHouse].lot].position[0],
+              (BUILDING_HEIGHTS[buildings[hoveredHouse]] ?? 3) / 2,
+              plan.lots[town.characters[hoveredHouse].lot].position[2],
+            ]}
+            zIndexRange={[20, 11]}
+            style={{ pointerEvents: "none" }}
+          >
+            <div className="house-name">{town.characters[hoveredHouse].persona.name}</div>
+          </Html>
         )}
       </group>
     </Canvas>

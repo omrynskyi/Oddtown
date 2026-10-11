@@ -2,8 +2,6 @@ import { Html } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { type Camera, Vector3 } from "three";
-import { TRAIT_AXES, type Persona, type TraitAxis } from "../events";
-import { leaning, TRAIT_ENDS } from "../traits";
 
 export type Point = [number, number, number];
 
@@ -22,99 +20,6 @@ export interface CardItem {
 
 export interface Agreement {
   key: string;
-}
-
-export interface HouseMessage {
-  key: string;
-  direction: "incoming" | "outgoing";
-  peer: string;
-  text: string;
-}
-
-/** Persistent resident details shown beside the house selected in the city. */
-export function HouseInspector({
-  position,
-  persona,
-  alive,
-  bornSeq,
-  diedSeq,
-  currentSeq,
-  latestThought,
-  messages,
-  onClose,
-}: {
-  position: Point;
-  persona: Persona;
-  alive: boolean;
-  bornSeq?: number;
-  diedSeq?: number;
-  currentSeq: number;
-  latestThought?: string;
-  messages: HouseMessage[];
-  onClose: () => void;
-}) {
-  const strongestTrait = TRAIT_AXES.reduce<TraitAxis>((strongest, axis) =>
-    Math.abs(persona.traits[axis]) > Math.abs(persona.traits[strongest]) ? axis : strongest,
-  TRAIT_AXES[0]);
-  const generation = persona.lineage?.generation;
-  const lifespan = bornSeq === undefined ? "Not recorded" : `${Math.max((diedSeq ?? currentSeq) - bornSeq, 0)} events`;
-  const incoming = messages.filter((message) => message.direction === "incoming");
-  const outgoing = messages.filter((message) => message.direction === "outgoing");
-
-  return (
-    <Html position={position} zIndexRange={[30, 0]}>
-      <article className="house-inspector">
-        <button className="house-inspector-close" type="button" onClick={onClose} aria-label={`Close ${persona.name}'s details`}>
-          ×
-        </button>
-        <h2>{persona.name}</h2>
-        <p className="house-inspector-line">{persona.one_liner}</p>
-        <dl className="house-inspector-details">
-          <div>
-            <dt>Generation</dt>
-            <dd>{generation === undefined ? "Original" : generation === 0 ? "Original" : `Gen ${generation + 1}`}</dd>
-          </div>
-          <div>
-            <dt>{TRAIT_ENDS[strongestTrait].name}</dt>
-            <dd>{leaning(strongestTrait, persona.traits[strongestTrait]).replace("Leans ", "")}</dd>
-          </div>
-          <div>
-            <dt>Status</dt>
-            <dd>{alive ? "At home" : "Remembered"}</dd>
-          </div>
-          <div>
-            <dt>Lifespan</dt>
-            <dd>{lifespan}</dd>
-          </div>
-        </dl>
-        {persona.worldview && <p className="house-inspector-worldview">{persona.worldview}</p>}
-        {persona.loves?.length ? <p className="house-inspector-loves">Loves {persona.loves.slice(0, 2).join(" and ")}</p> : null}
-        <MessageGroup label="Incoming" messages={incoming} empty="No incoming messages yet." />
-        <MessageGroup label="Outgoing" messages={outgoing} empty="No outgoing messages yet." />
-        {latestThought && <p className="house-inspector-thought"><strong>Latest thought</strong>{latestThought}</p>}
-      </article>
-    </Html>
-  );
-}
-
-function MessageGroup({ label, messages, empty }: { label: string; messages: HouseMessage[]; empty: string }) {
-  return (
-    <section className="house-message-group" aria-label={`${label} messages`}>
-      <h3>{label}</h3>
-      {messages.length ? (
-        <ul>
-          {messages.slice(0, 4).map((message) => (
-            <li key={message.key}>
-              <span>{message.peer}</span>
-              <p>{message.text || "No message text."}</p>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="house-message-empty">{empty}</p>
-      )}
-    </section>
-  );
 }
 
 const STAMPS: Partial<Record<CardItem["kind"], string>> = {

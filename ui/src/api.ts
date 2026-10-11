@@ -67,6 +67,18 @@ export async function getRunEvents(runId: string): Promise<AnyEvent[]> {
   return response.json();
 }
 
+/** Ask the observer to summarize a run now. Joins the summary already being written, if there is one. */
+export async function requestSummary(runId: string): Promise<AnyEvent> {
+  let response: Response;
+  try {
+    response = await fetch(`${OBSERVER_URL}/runs/${encodeURIComponent(runId)}/summary`, { method: "POST" });
+  } catch {
+    throw new Error(`Couldn't reach the observer at ${OBSERVER_URL}.`);
+  }
+  if (!response.ok) throw new Error(`The observer answered ${response.status}.`);
+  return response.json();
+}
+
 export function stopRun(runId: string): Promise<{ run_id: string }> {
   return post(`/runs/${encodeURIComponent(runId)}/stop`);
 }

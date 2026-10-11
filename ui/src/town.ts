@@ -1,7 +1,8 @@
 // Turns the observer's event stream into the state the screens draw.
 // Pure, so the same events always give the same town, live or replayed.
 
-import { isKnown, type AnyEvent, type Persona } from "./events";
+import { isKnown, type AgentDecision, type AnyEvent, type Finalist, type Persona, type Summary } from "./events";
+import { shortName } from "./names";
 
 export const LOT_COUNT = 6;
 
@@ -52,6 +53,43 @@ export interface Interaction {
 /** Only the latest few are kept, since each letter is gone from the screen in a few seconds. */
 const MAX_INTERACTIONS = 8;
 
+/**
+ * One line of town news, for the ticker under the title and the news list.
+ * `actor` is the character it is about, and `quote` is the idea or rule it mentions.
+ */
+export interface FeedItem {
+  /** The event it came from. One event can post two items, like a backing that changes the lead, so key on seq and kind. */
+  seq: number;
+  kind: "seed" | "twist" | "merge" | "back" | "drop" | "object" | "constraint" | "birth" | "death" | "lead" | "rest" | "end" | "summary";
+  actor?: string;
+  text: string;
+  quote?: string;
+  branchId?: string;
+}
+
+/** A character's turn: what it did, what it said, and why. */
+export interface Decision {
+  seq: number;
+  action: AgentDecision["payload"]["action"];
+  say: string;
+  reason: string;
+  branchId?: string;
+}
+
+export interface Objection {
+  seq: number;
+  agentId: string;
+  branchId: string;
+  reason: string;
+}
+
+export interface Reflection {
+  seq: number;
+  insights: string[];
+  agenda: string;
+  impressions: { peerId: string; impression: string }[];
+}
+
 export interface Town {
   runId: string | null;
   seed: string | null;
@@ -67,8 +105,29 @@ export interface Town {
   branches: Record<string, Branch>;
   /** The branches each character currently backs. */
   endorsements: Record<string, string[]>;
+  /** Why each character backs a branch, keyed by `backingKey`. */
+  backingReasons: Record<string, string>;
+  /** Every letter between houses, oldest first, for the side panel. */
+  letters: Interaction[];
+  /** Every turn each character took, oldest first. */
+  decisions: Record<string, Decision[]>;
+  objections: Objection[];
+  /** Each character's latest reflection. */
+  reflections: Record<string, Reflection>;
+  lastWords: Record<string, string>;
+  resting: string[];
+  constraints: string[];
+  /** Town news since the run started, oldest first. */
+  feed: FeedItem[];
+  /** The branch with the most living backers, once one leads outright. */
+  leader: string | null;
+  finalists: Finalist[] | null;
+  baseline: string[];
+  summary: Summary | null;
   lastSeq: number;
 }
+
+export const backingKey = (agentId: string, branchId: string) => `${agentId}|${branchId}`;
 
 export const initialTown: Town = {
   runId: null,
@@ -80,6 +139,19 @@ export const initialTown: Town = {
   interactions: [],
   branches: {},
   endorsements: {},
+  backingReasons: {},
+  letters: [],
+  decisions: {},
+  objections: [],
+  reflections: {},
+  lastWords: {},
+  resting: [],
+  constraints: [],
+  feed: [],
+  leader: null,
+  finalists: null,
+  baseline: [],
+  summary: null,
   lastSeq: 0,
 };
 
@@ -119,21 +191,39 @@ function applyEvent(town: Town, event: AnyEvent): Town {
   switch (event.type) {
     case "run.created":
       return advance({ ...town, seed: event.payload.seed }, "loading");
-    case "agent.born":
-      return moveIn(town, event.payload.persona, event.seq);
+    case "agent.born": {
+      const moved = moveIn(town, event.payload.persona, event.seq);
+      if (moved === town || town.phase !== "running") return moved;
+      const replaces = event.payload.persona.lineage?.replaces;
+      const text = replaces && town.characters[replaces] ? `moved in, in place of ${nameOf(town, replaces)}` : "moved into town";
+      return news(moved, { seq: event.seq, kind: "birth", actor: event.payload.persona.id, text });
+    }
     case "run.ready":
       return advance(town, "ready");
     case "run.started":
       return advance(town, "running");
-    case "agent.decision":
-      return say(town, event.agent_id, event.payload.say, event.seq, false);
-    case "agent.last_words":
-      return say(town, event.agent_id, event.payload.text, event.seq, true);
+    case "agent.decision": {
+      const id = event.agent_id;
+      const spoken = say(town, id, event.payload.say, event.seq, false);
+      if (!id || !town.characters[id]) return spoken;
+      const { action, say: line, reason, target_branch } = event.payload;
+      const decision: Decision = { seq: event.seq, action, say: line, reason: reason ?? "", branchId: target_branch ?? undefined };
+      return { ...spoken, decisions: { ...spoken.decisions, [id]: [...(spoken.decisions[id] ?? []), decision] } };
+    }
+    case "agent.last_words": {
+      const spoken = say(town, event.agent_id, event.payload.text, event.seq, true);
+      return event.agent_id ? { ...spoken, lastWords: { ...spoken.lastWords, [event.agent_id]: event.payload.text } } : spoken;
+    }
     case "branch.created": {
       const { branch_id, parent_ids, op, authors, text } = event.payload;
       if (town.branches[branch_id]) return town;
       const branch: Branch = { id: branch_id, parentIds: parent_ids, op, authors, text, seq: event.seq };
-      return { ...town, branches: { ...town.branches, [branch_id]: branch } };
+      const grown = { ...town, branches: { ...town.branches, [branch_id]: branch } };
+      if (op === "seed") return grown;
+      const actor = authors.find((a) => town.characters[a]);
+      const others = authors.filter((a) => a !== actor && town.characters[a]).map((a) => nameOf(town, a));
+      const verb = op === "merge" ? `merged two ideas${others.length ? ` with ${others.join(" and ")}` : ""}` : "twisted the idea";
+      return news(grown, { seq: event.seq, kind: op, actor, text: verb, quote: text, branchId: branch_id });
     }
     case "idea.share":
     case "idea.pitch":
@@ -151,21 +241,93 @@ function applyEvent(town: Town, event: AnyEvent): Town {
     case "unendorse": {
       const id = event.agent_id;
       if (!id) return town;
-      const backed = (town.endorsements[id] ?? []).filter((b) => b !== event.payload.branch_id);
-      if (event.type === "endorse") backed.push(event.payload.branch_id);
-      return { ...town, endorsements: { ...town.endorsements, [id]: backed } };
+      const { branch_id, reason } = event.payload;
+      const before = town.endorsements[id] ?? [];
+      const backed = before.filter((b) => b !== branch_id);
+      if (event.type === "endorse") backed.push(branch_id);
+      let next: Town = { ...town, endorsements: { ...town.endorsements, [id]: backed } };
+      if (reason?.trim()) next = { ...next, backingReasons: { ...next.backingReasons, [backingKey(id, branch_id)]: reason } };
+      const changed = event.type === "endorse" ? !before.includes(branch_id) : before.includes(branch_id);
+      if (changed && town.characters[id] && town.branches[branch_id]) {
+        const backs = event.type === "endorse";
+        next = news(next, { seq: event.seq, kind: backs ? "back" : "drop", actor: id, text: backs ? "now backs" : "stopped backing", quote: town.branches[branch_id].text, branchId: branch_id });
+      }
+      return lead(next, event.seq);
+    }
+    case "objection": {
+      const id = event.agent_id;
+      const { branch_id, reason = "" } = event.payload;
+      if (!id || !town.characters[id]) return town;
+      const objected = { ...town, objections: [...town.objections, { seq: event.seq, agentId: id, branchId: branch_id, reason }] };
+      return news(objected, { seq: event.seq, kind: "object", actor: id, text: "objected to", quote: town.branches[branch_id]?.text ?? branch_id, branchId: branch_id });
+    }
+    case "agent.reflection": {
+      const id = event.agent_id;
+      if (!id || !town.characters[id]) return town;
+      const { insights = [], agenda = "", impressions = [] } = event.payload;
+      const reflection: Reflection = { seq: event.seq, insights, agenda, impressions: impressions.map((i) => ({ peerId: i.peer_id, impression: i.impression })) };
+      return { ...town, reflections: { ...town.reflections, [id]: reflection } };
+    }
+    case "rest": {
+      const id = event.agent_id;
+      if (!id || !town.characters[id] || town.resting.includes(id)) return town;
+      return news({ ...town, resting: [...town.resting, id] }, { seq: event.seq, kind: "rest", actor: id, text: "has said their piece" });
+    }
+    case "world.event": {
+      const { kind, text } = event.payload;
+      if (kind === "seed") return news(town, { seq: event.seq, kind: "seed", text: "The town hears your idea", quote: text });
+      if (kind !== "constraint") return town;
+      return news({ ...town, constraints: [...town.constraints, text] }, { seq: event.seq, kind: "constraint", text: "New rule for the town", quote: text });
     }
     case "agent.died": {
       const id = event.agent_id;
       const character = id ? town.characters[id] : undefined;
-      if (!id || !character) return town;
-      return { ...town, characters: { ...town.characters, [id]: { ...character, alive: false, diedSeq: event.seq } } };
+      if (!id || !character || !character.alive) return town;
+      const died = { ...town, characters: { ...town.characters, [id]: { ...character, alive: false, diedSeq: event.seq } } };
+      return lead(news(died, { seq: event.seq, kind: "death", actor: id, text: "left town for good" }), event.seq);
     }
-    case "run.ended":
-      return advance(town, "ended");
+    case "run.ended": {
+      const ended = { ...advance(town, "ended"), finalists: event.payload.finalists ?? [], baseline: event.payload.baseline ?? [] };
+      return news(ended, { seq: event.seq, kind: "end", text: "The town has finished talking" });
+    }
+    case "run.summary": {
+      const p = event.payload;
+      const summary: Summary = {
+        headline: p.headline ?? "",
+        verdicts: p.verdicts ?? [],
+        buckets: p.buckets ?? [],
+        moments: p.moments ?? [],
+        baseline: p.baseline ?? [],
+        model: p.model,
+        error: p.error,
+      };
+      if (summary.error) return { ...town, summary };
+      return news({ ...town, summary }, { seq: event.seq, kind: "summary", text: "The verdict is in", quote: summary.headline });
+    }
     default:
       return town;
   }
+}
+
+function nameOf(town: Town, id: string): string {
+  const persona = town.characters[id]?.persona;
+  return persona ? shortName(persona.name) : id;
+}
+
+function news(town: Town, item: FeedItem): Town {
+  return { ...town, feed: [...town.feed, item] };
+}
+
+/** Posts the news when a different branch takes the outright lead, with at least two backers. */
+function lead(town: Town, seq: number): Town {
+  const ranked = Object.entries(livingSupport(town))
+    .filter(([id]) => town.branches[id] && town.branches[id].op !== "seed")
+    .sort((a, b) => b[1].length - a[1].length);
+  const [top, next] = ranked;
+  const leader = top && top[1].length >= 2 && top[1].length > (next?.[1].length ?? 0) ? top[0] : town.leader;
+  if (leader === town.leader || !leader) return town;
+  const backers = top[1].length;
+  return news({ ...town, leader }, { seq, kind: "lead", text: `New front-runner, with ${backers} backers`, quote: town.branches[leader].text, branchId: leader });
 }
 
 function say(town: Town, id: string | null, text: string, seq: number, lastWords: boolean): Town {
@@ -178,7 +340,7 @@ function interact(town: Town, seq: number, from: string | null, to: string, kind
   const home = (id: string | null) => (id ? town.lots[town.characters[id]?.lot ?? -1] === id : false);
   if (!from || from === to || !home(from) || !home(to)) return town;
   const letter: Interaction = { seq, from, to, kind, text: text.trim() };
-  return { ...town, interactions: [...town.interactions, letter].slice(-MAX_INTERACTIONS) };
+  return { ...town, interactions: [...town.interactions, letter].slice(-MAX_INTERACTIONS), letters: [...town.letters, letter] };
 }
 
 /** A newcomer takes the lot of the character it replaces, otherwise the first empty lot. */

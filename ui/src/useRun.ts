@@ -1,7 +1,7 @@
 // Holds the town and keeps it fed from the observer's WebSocket for the current run.
 
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { createRun, getRunEvents, runSocketUrl, startRun } from "./api";
+import { createRun, getRunEvents, requestSummary, runSocketUrl, startRun } from "./api";
 import type { AnyEvent } from "./events";
 import { initialTown, townReducer } from "./town";
 
@@ -70,6 +70,20 @@ export function useRun() {
     if (runId) await startRun(runId);
   }, [runId]);
 
+  /** Summarize the run now, for a run that ended before summaries existed or whose summary failed. */
+  const summarize = useCallback(async () => {
+    if (!runId) return;
+    const event = await requestSummary(runId);
+    dispatch({ kind: "event", event });
+    // A replayed run keeps it on its timeline too, so scrubbing doesn't lose it.
+    setReplay((current) => {
+      if (!current || current.runId !== event.run_id || current.events.some((e) => e.seq === event.seq)) return current;
+      const atEnd = current.position === current.events.length;
+      const events = [...current.events, event];
+      return { ...current, events, position: atEnd ? events.length : current.position };
+    });
+  }, [runId]);
+
   /** Replay a saved run into the same city and tree views used for a live town. */
   const openRun = useCallback(async (runId: string, seed: string | null) => {
     const events = await getRunEvents(runId);
@@ -129,5 +143,5 @@ export function useRun() {
       }
     : null;
 
-  return { town, connection, submit, start, openRun, home, timeline };
+  return { town, connection, submit, start, openRun, home, summarize, timeline };
 }

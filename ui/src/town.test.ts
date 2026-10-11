@@ -186,4 +186,54 @@ describe("town reducer", () => {
       expect(kinds).toContain("disagree");
     });
   });
+
+  describe("town news and history", () => {
+    const town = play(events);
+    const base = play(upTo("run.started"));
+    const send = (type: string, agent: string | null, payload: Record<string, unknown>, from = base) =>
+      townReducer(from, { kind: "event", event: { run_id: RUN, seq: from.lastSeq + 1, ts: 0, type, agent_id: agent, payload } });
+
+    it("posts news for twists, merges, backing, the rule, the death, the lead and the end", () => {
+      const kinds = new Set(town.feed.map((f) => f.kind));
+      for (const kind of ["seed", "twist", "merge", "back", "drop", "constraint", "death", "birth", "lead", "end"]) expect(kinds).toContain(kind);
+      const seqs = town.feed.map((f) => f.seq);
+      expect(seqs).toEqual([...seqs].sort((a, b) => a - b));
+    });
+
+    it("keeps no news from before the run started", () => {
+      expect(play(upTo("run.ready")).feed).toEqual([]);
+    });
+
+    it("keeps every letter and every decision with its reason", () => {
+      const sent = events.filter((e) => ["idea.share", "idea.reaction", "idea.pitch", "pitch.response", "merge.propose", "merge.response"].includes(e.type));
+      expect(town.letters.length).toBeGreaterThan(8);
+      expect(town.letters.length).toBeLessThanOrEqual(sent.length);
+      const decisions = Object.values(town.decisions).flat();
+      expect(decisions).toHaveLength(events.filter((e) => e.type === "agent.decision").length);
+      expect(decisions.every((d) => d.reason)).toBe(true);
+    });
+
+    it("keeps the finalists and baseline from run.ended", () => {
+      expect(town.finalists?.map((f) => f.branch_id)).toEqual(["br_002", "br_001", "br_003"]);
+      expect(town.baseline).toHaveLength(3);
+    });
+
+    it("records objections and backing reasons, with news for the objection", () => {
+      const objected = send("objection", "char_dez", { branch_id: "br_000", reason: "Too vague" });
+      expect(objected.objections).toEqual([{ seq: base.lastSeq + 1, agentId: "char_dez", branchId: "br_000", reason: "Too vague" }]);
+      expect(objected.feed.at(-1)).toMatchObject({ kind: "object", actor: "char_dez", branchId: "br_000" });
+      const backed = send("endorse", "char_dez", { branch_id: "br_000", reason: "It's simple" });
+      expect(backed.backingReasons["char_dez|br_000"]).toBe("It's simple");
+    });
+
+    it("takes the summary, and leaves news out when it failed", () => {
+      const summary = { headline: "Jars win", verdicts: [{ branch_id: "br_002", title: "Jars", why: "", risk: "" }], buckets: [], moments: [], baseline: [] };
+      const done = send("run.summary", null, summary, town);
+      expect(done.summary).toMatchObject(summary);
+      expect(done.feed.at(-1)).toMatchObject({ kind: "summary", quote: "Jars win" });
+      const failed = send("run.summary", null, { error: "timeout" }, town);
+      expect(failed.summary?.error).toBe("timeout");
+      expect(failed.feed).toEqual(town.feed);
+    });
+  });
 });
