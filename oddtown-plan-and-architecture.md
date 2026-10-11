@@ -19,6 +19,7 @@ The goal is creativity. One LLM on its own tends toward samey ideas, so Oddtown 
 | A real deliberation or negotiation mechanism | Merging two branches is a compromise, characters pitch for endorsements, and three survivors co-design every replacement |
 | No central decision-maker | Peer-to-peer messaging over SLIM, each dying agent picks its own replacement team, and the world service only injects events |
 | Effect of new information | Constraints injected mid-run kill some branches and reshape others |
+| Comparison against a simpler baseline | One LLM gets the same seed and writes three ideas, shown side by side with the town's three finalists |
 | When to stop, keep the disagreement, or ask a human | Explicit rules, covered in their own section below |
 | Level 2 dynamic discovery | Characters look each other up by trait in the Directory, and new characters register at runtime |
 | Level 2 unexpected failure | Characters die mid-conversation when their lifespan runs out, and the rest have to adapt |
@@ -187,7 +188,7 @@ Observability. `AgntcyFactory(enable_tracing=True)` sends Observe SDK traces to 
 
 ```text
 oddtown/
-  agents/        character.py, brain.py, memory.py, replace.py, prompts/
+  agents/        character.py, brain.py, memory.py, replace.py, baseline.py, prompts/
   transport/     adapter.py, slim_a2a.py, http_fallback.py
   registry/      adapter.py, agntcy_dir.py, memory_registry.py
   world/         service.py, launcher.py
@@ -329,18 +330,23 @@ Disagreement about taste is kept and reported, because that is the useful part. 
 
 Requests go to the observer as a `human.request` event and show up in the UI as a card. The run keeps going while it waits, and the branch in question is frozen until the human answers.
 
+## Baseline
+
+The baseline is one LLM call. It gets the same seed and constraints the town got and is asked for its three most creative takes on the idea, using one of the characters' models so the comparison is about the town, not the model. We show its three ideas next to the town's three finalists and let the audience judge. There is no scoring, because the difference should be obvious.
+
 ## Demo script
 
-The demo runs about three minutes and follows one rehearsed seed idea to three finalists. Each beat is something judges can see happen on screen, not something we just claim.
+The demo runs about three and a half minutes and follows one rehearsed seed idea to three finalists. Each beat is something judges can see happen on screen, not something we just claim.
 
 | Time | On screen | What we say |
 | --- | --- | --- |
-| 0 to 30 s | Oddtown starts with "a coffee subscription", and six houses in the city light up with speech bubbles | These characters only talk to each other, and nobody runs the town |
-| 30 s to 1 min | Two factions show up as flag colors across the city and on the idea tree, and a merge negotiation plays out in speech bubbles | Click a house to see that character's memories and why it changed its mind |
-| 1 to 1.5 min | A character's lifespan runs out, it posts its last pitch and picks three survivors, one drafts a replacement, two refine it, and a new building rises on the empty lot | Death is how new perspectives get into the town |
-| 1.5 to 2 min | We inject "it has to work with no electricity" and branches die or reshape | Marguerite's branch suddenly gets backers |
-| 2 to 2.5 min | We kill an agent's process by hand, a message to it bounces, and the peer who noticed picks the replacement team | Even a crash gets handled with nobody in charge |
-| 2.5 to 3 min | The run ends with three finalists, minority reports and one human decision card | We kept the disagreement on purpose, and asked a human only for the tie |
+| 0 to 30 s | One LLM's three takes on "a coffee subscription" | This is what one model gives you |
+| 30 s to 1 min | Oddtown starts with "a coffee subscription", and six houses in the city light up with speech bubbles | These characters only talk to each other, and nobody runs the town |
+| 1 to 1.5 min | Two factions show up as flag colors across the city and on the idea tree, and a merge negotiation plays out in speech bubbles | Click a house to see that character's memories and why it changed its mind |
+| 1.5 to 2 min | A character's lifespan runs out, it posts its last pitch and picks three survivors, one drafts a replacement, two refine it, and a new building rises on the empty lot | Death is how new perspectives get into the town |
+| 2 to 2.5 min | We inject "it has to work with no electricity" and branches die or reshape | Marguerite's branch suddenly gets backers |
+| 2.5 to 3 min | We kill an agent's process by hand, a message to it bounces, and the peer who noticed picks the replacement team | Even a crash gets handled with nobody in charge |
+| 3 to 3.5 min | The run ends with three finalists next to the single LLM's three ideas, plus minority reports and one human decision card | Compare them yourself. We kept the disagreement on purpose, and asked a human only for the tie |
 
 The UI can replay any run from its event log. We record a full run with a locked seed by hour 10 and keep it ready in case the live run stalls or the network dies.
 

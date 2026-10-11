@@ -64,7 +64,7 @@ Person 2's goal is a character that makes one good decision per LLM call, and th
 | 0 to 1.5 | Persona and branch schemas, schema and content checks, the six starting characters in `personas/starting_cast.json`, and `agents/llm.py` with chat and JSON mode, using whichever model the persona names | **Gate 1.5.** All personas validate, and one decision call returns valid JSON |
 | 1.5 to 4 | Memory stream, importance scores returned by the decision call, retrieval by recency and importance (top 8), the decision call, the batched inbox (wake on shares, pitches, merge offers and world events, wait 3 seconds, answer everything in one call) with a 20 to 40 second idle timer, the six actions, the two-endorsement limit, and an `emit` call for every act. Built on Person 1's local transport | **Gate 4.** Six characters gossip a seed end to end |
 | 4 to 6 | Lifespan counted in actions and wall-clock time with staggered starts, last words, picking three survivors, and `replace.py` running propose, refine, refine and birth. The newcomer sends its hello | **Gate 6.** An agent dies, and a newcomer joins the gossip |
-| 6 to 8.5 | Reflection and agenda, `rest` and the stopping rule, `human.request` for rule breaks and feasibility disputes, and freezing a branch until the human answers | |
+| 6 to 8.5 | `agents/baseline.py`, one call that gives the same seed and constraints to one model and returns three ideas. Reflection and agenda, `rest` and the stopping rule, `human.request` for rule breaks and feasibility disputes, and freezing a branch until the human answers | |
 | 8.5 to 10 | Prompt tuning on real runs, covering how novel the replacements are, drift away from the seed, and the starting parameters | **Gate 10.** Feature freeze |
 | 10 to 12 | Write the implementation details section and help rehearse | |
 
@@ -83,7 +83,7 @@ Person 3's goal is that judges can see every beat of the demo script on screen, 
 | 1.5 to 4.5 | The city view: six lots with KayKit buildings, one speech bubble per house for each decision, faction flags from endorsements, and world events on a billboard | A mock run reads clearly in the city |
 | 4.5 to 6 | Deaths and births, where the last words show, the building sinks and a new one rises on the same lot. Clicking a house shows the character's persona and recent thoughts | The city works on a real event log |
 | 6 to 7.5 | The idea tree view in d3, with branches labeled by op and author, colored by living support, and merges drawn with two parents | |
-| 7.5 to 8.5 | The inject panel and human request cards, both calling Person 1's world service, and the run-end view with finalists and minority reports | **Gate 8.** The UI draws a live run |
+| 7.5 to 8.5 | The inject panel and human request cards, both calling Person 1's world service, and the run-end view with finalists and minority reports next to the baseline's three ideas | **Gate 8.** The UI draws a live run |
 | 8.5 to 10 | Polish, and recording the demo with Person 1 | **Gate 10** |
 | 10 to 12 | Build the slides, and assemble and submit | **Gate 12** |
 
