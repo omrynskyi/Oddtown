@@ -1,7 +1,7 @@
 // Holds the town and keeps it fed from the observer's WebSocket for the current run.
 
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import { createRun, runSocketUrl } from "./api";
+import { createRun, runSocketUrl, startRun } from "./api";
 import type { AnyEvent } from "./events";
 import { initialTown, townReducer } from "./town";
 
@@ -51,9 +51,14 @@ export function useRun() {
     dispatch({ kind: "submitted", runId: run_id, seed });
   }, []);
 
+  const runId = town.runId;
+  const start = useCallback(async () => {
+    if (runId) await startRun(runId);
+  }, [runId]);
+
   useEffect(() => {
     if (import.meta.env.DEV) (window as unknown as { __town: unknown }).__town = town;
   }, [town]);
 
-  return { town, connection, submit };
+  return { town, connection, submit, start };
 }

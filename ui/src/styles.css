@@ -165,6 +165,14 @@ body {
 .city-screen {
   position: fixed;
   inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.city-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
 }
 
 .city-overlay {
@@ -191,6 +199,161 @@ body {
   font-weight: 600;
 }
 
+/* Ready: the Start run button, with the characters' cards in a strip underneath. */
+
+.ready {
+  position: relative;
+  z-index: 1;
+  padding: 0 0 20px;
+  animation: ready-in 320ms ease-out both;
+}
+
+@keyframes ready-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+}
+
+.ready-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px 16px;
+}
+
+.start-button {
+  padding: 14px 40px;
+  border: var(--outline);
+  border-radius: 20px;
+  background: var(--taxi);
+  color: var(--asphalt);
+  font: 800 24px / 1 var(--font);
+  box-shadow: var(--lift);
+  cursor: pointer;
+}
+
+.start-button:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 var(--asphalt);
+}
+
+.start-button:focus-visible {
+  outline: 4px solid var(--asphalt);
+  outline-offset: 4px;
+}
+
+.start-button:disabled {
+  cursor: default;
+  background: var(--kerb);
+  color: var(--asphalt-soft);
+  border-color: var(--asphalt-soft);
+  box-shadow: 0 6px 0 var(--asphalt-soft);
+}
+
+.ready-error {
+  margin: 4px 0 0;
+  color: var(--brick);
+  font-size: 17px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.cards {
+  display: flex;
+  gap: 14px;
+  margin: 0;
+  padding: 4px 24px 10px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 24px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--asphalt-soft) transparent;
+}
+
+.cards > li {
+  flex: none;
+  scroll-snap-align: start;
+}
+
+.card {
+  width: 248px;
+  height: 100%;
+  padding: 14px 16px 12px;
+  background: var(--kerb);
+  border: 2px solid var(--asphalt);
+  border-radius: 18px;
+  box-shadow: 0 4px 0 var(--asphalt);
+}
+
+.card-name {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.card-line {
+  margin: 2px 0 10px;
+  color: var(--asphalt-soft);
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.card-traits {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+}
+
+.trait-row {
+  display: grid;
+  grid-template-columns: 1fr 64px 1fr;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.trait-end {
+  color: var(--asphalt-soft);
+}
+
+.trait-end-high {
+  text-align: right;
+}
+
+.trait-bar {
+  position: relative;
+  height: 10px;
+  border: 2px solid var(--asphalt);
+  border-radius: 6px;
+  background: #fff;
+  overflow: hidden;
+}
+
+/* The middle mark, so you can see which way each trait leans. */
+.trait-bar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% - 1px);
+  width: 2px;
+  background: var(--asphalt);
+}
+
+.trait-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--taxi);
+}
+
 @media (max-width: 560px) {
   .wordmark {
     padding: 16px;
@@ -212,7 +375,12 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ask-button:active:not(:disabled) {
+  .ask-button:active:not(:disabled),
+  .start-button:active:not(:disabled) {
     transform: none;
+  }
+
+  .ready {
+    animation: none;
   }
 }
