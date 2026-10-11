@@ -49,6 +49,22 @@ describe("town generator", () => {
       expect(onBlock, `${seed}: ${prop.model} floats at ${prop.position}`).toBe(true);
     }
 
+    // Traffic follows one straight street, starts and finishes beyond its kerbs, and uses known cars.
+    expect(plan.traffic.length).toBeGreaterThanOrEqual(1);
+    expect(plan.traffic.length).toBeLessThanOrEqual(2);
+    for (const car of plan.traffic) {
+      expect(ALL_MODELS).toContain(car.model);
+      expect(car.model.startsWith("car_")).toBe(true);
+      expect(car.from[0] === car.to[0] || car.from[2] === car.to[2]).toBe(true);
+      expect(Math.hypot(car.to[0] - car.from[0], car.to[2] - car.from[2])).toBeGreaterThan(TILE * 2);
+      expect(car.phase).toBeGreaterThanOrEqual(0);
+      expect(car.phase).toBeLessThan(1);
+    }
+    const trafficStreets = plan.traffic.map((car) =>
+      car.from[0] === car.to[0] ? `z:${car.from[0]}` : `x:${car.from[2]}`,
+    );
+    expect(new Set(trafficStreets).size).toBe(trafficStreets.length);
+
     // Roads join up: each piece opens onto its neighbors in the road, and corners open onto exactly them.
     for (const road of roads) {
       const [x, z] = tileOf(road.position);

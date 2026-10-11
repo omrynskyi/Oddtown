@@ -4,20 +4,49 @@
     {
       "name": "observer",
       "runtimeExecutable": ".venv/bin/uvicorn",
-      "runtimeArgs": ["observer.app:app", "--port", "8100"],
+      "runtimeArgs": [
+        "observer.app:app",
+        "--port",
+        "8100"
+      ],
       "port": 8100
     },
     {
       "name": "mock-world",
       "runtimeExecutable": ".venv/bin/uvicorn",
-      "runtimeArgs": ["observer.mock_world:app", "--port", "8200"],
+      "runtimeArgs": [
+        "observer.mock_world:app",
+        "--port",
+        "8200"
+      ],
       "port": 8200
     },
     {
       "name": "ui",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["--prefix", "ui", "run", "dev"],
+      "runtimeArgs": [
+        "--prefix",
+        "ui",
+        "run",
+        "dev"
+      ],
       "port": 5173
+    },
+    {
+      "name": "tmp-ui-mock",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "VITE_WORLD_URL=http://localhost:8201",
+        "npm",
+        "--prefix",
+        "ui",
+        "run",
+        "dev",
+        "--",
+        "--port",
+        "5190"
+      ],
+      "port": 5190
     }
   ]
 }

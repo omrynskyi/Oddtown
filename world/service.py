@@ -6,7 +6,9 @@ It joins the town as the agent "world" (kind "world"), so it hears every
 broadcast like a character does and can answer spawn requests. Everything it
 does is one of these:
 
-    POST /runs                              launch the cast; emits run.created, agent.born each, run.ready
+    POST /runs                              launch the cast; emits run.created, agent.born each, run.ready.
+                                            {"mode": "ideation_loop", "loop": {...}} runs the ideation
+                                            voting loop (world/ideation.py) instead of the town
     POST /runs/{run_id}/start               broadcast the seed; emits run.started
     POST /runs/{run_id}/inject              broadcast a constraint or feedback as a world.event
     POST /runs/{run_id}/human/{id}/answer   broadcast a human's answer to a human.request
@@ -37,14 +39,18 @@ import time
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from agents import config as agent_config
 from observer.client import aemit
 from transport.adapter import DeadPeerError
 from transport.town import Town
+from world.ideation import MODE as IDEATION_MODE
+from world.ideation import IdeationLoop, LoopSettings
 from world.launcher import ROOT, Launcher
 from world.ledger import Ledger
 
@@ -52,6 +58,8 @@ log = logging.getLogger("world")
 
 WORLD_ID = "world"
 DEFAULT_CAST = ROOT / "personas" / "starting_cast.json"
+# The ideation loop runs up to 12 agents, so it draws from the bigger cast.
+IDEATION_CAST = ROOT / "personas" / "extended_cast.json"
 SEED_BRANCH_ID = "br_seed"
 
 
@@ -62,6 +70,9 @@ class NewRun(BaseModel):
     token_budget: int = 1_500_000
     ready_timeout_s: float = 60
     stop_grace_s: float = 5
+    # "town" is the gossiping town. "ideation_loop" is the ideation voting loop.
+    mode: Literal["town", "ideation_loop"] = "town"
+    loop: LoopSettings | None = None  # only for ideation_loop; defaults apply when left out
 
 
 class Inject(BaseModel):
@@ -88,6 +99,8 @@ class Run:
         self.launcher: Launcher | None = None
         self.cast_ids: list[str] = []
         self.born: set[str] = set()
+        self.constraints: list[str] = []
+        self.ideation: IdeationLoop | None = None
 
 
 class World:
@@ -130,7 +143,15 @@ class World:
     async def create_run(self, request: NewRun) -> dict:
         if self.run and self.run.state not in ("ended", "failed"):
             raise HTTPException(409, "a run is already going, stop it first")
-        cast = request.cast if request.cast is not None else json.loads(DEFAULT_CAST.read_text())
+        ideation = request.mode == IDEATION_MODE
+        if ideation and request.loop is None:
+            request.loop = LoopSettings()
+        default_cast = IDEATION_CAST if ideation else DEFAULT_CAST
+        cast = request.cast if request.cast is not None else json.loads(default_cast.read_text())
+        if ideation:
+            if len(cast) < request.loop.agents:
+                raise HTTPException(400, f"the cast has {len(cast)} personas, the loop needs {request.loop.agents}")
+            cast = cast[: request.loop.agents]
         if not cast:
             raise HTTPException(400, "the cast is empty")
         ids = [p.get("id") for p in cast]
@@ -144,10 +165,10 @@ class World:
         await self._clear_stale_records()
         run.launcher = Launcher(
             run.run_dir,
-            {"RUN_ID": run.id, "ODDTOWN_TOWN": os.environ.get("ODDTOWN_TOWN", "oddtown")},
+            {"RUN_ID": run.id, "ODDTOWN_TOWN": os.environ.get("ODDTOWN_TOWN", "oddtown"), "ODDTOWN_MODE": request.mode},
             self.on_exit,
         )
-        await self.emit("run.created", {"seed": request.seed})
+        await self.emit("run.created", {"seed": request.seed, "mode": request.mode})
         self.spawn(self._bring_online(run, cast))
         return {"run_id": run.id}
 
@@ -184,7 +205,10 @@ class World:
         run.state = "running"
         run.started_at = time.monotonic()
         self.spawn(self._watchdog(run))
-        await self.emit("run.started", {})
+        if run.request.mode == IDEATION_MODE:
+            return await self._start_ideation(run)
+        # The characters' quorum, so the UI badges the same proposals they see.
+        await self.emit("run.started", {"quorum": agent_config.QUORUM if agent_config.on("quorum") else None})
         seed_branch = {
             "branch_id": SEED_BRANCH_ID,
             "parent_ids": [],
@@ -194,6 +218,30 @@ class World:
         }
         await self.world_event("seed", run.request.seed, branch=seed_branch)
         await self.emit("branch.created", seed_branch)
+        return {"run_id": run.id}
+
+    async def _start_ideation(self, run: Run) -> dict:
+        settings = run.request.loop
+        rng_seed = settings.random_seed if settings.random_seed is not None else uuid.uuid4().int % 2**32
+        cast_pool = json.loads(IDEATION_CAST.read_text())
+        run.ideation = IdeationLoop(self, run, settings, run.cast_ids, run.request.seed, rng_seed, spare_personas=cast_pool)
+        await self.emit("run.started", {
+            "quorum": None, "mode": IDEATION_MODE, "loop": {**settings.model_dump(), "random_seed": rng_seed},
+        })
+        seed_branch = {"branch_id": SEED_BRANCH_ID, "parent_ids": [], "op": "seed", "authors": [WORLD_ID],
+                       "text": run.request.seed}
+        await self.emit("world.event", {"kind": "seed", "text": run.request.seed})
+        await self.emit("branch.created", seed_branch)
+
+        async def drive():
+            try:
+                await run.ideation.run_all()
+                await self.end_run("ideation complete")
+            except Exception as exc:
+                log.exception("the ideation loop failed")
+                await self.end_run(f"ideation loop failed: {exc}")
+
+        self.spawn(drive())
         return {"run_id": run.id}
 
     async def _clear_stale_records(self) -> None:
@@ -207,6 +255,8 @@ class World:
         # Stop and human answers show up there as run.ended and human.answer.
         if kind in ("seed", "constraint", "feedback"):
             await self.emit("world.event", {"kind": kind, "text": text})
+        if kind == "constraint" and self.run:
+            self.run.constraints.append(text)
         dead = await self.town.broadcast({"type": "world.event", "body": body})
         for agent_id in dead:
             await self.emit("agent.bounced", {"noticed_by": WORLD_ID}, agent_id)
@@ -227,9 +277,22 @@ class World:
                 return run.result if run else {}
             run.state = "ending"
             living = await self.living()
-            tally = run.ledger.finalists(living)
-            run.result = {"reason": reason, "living": sorted(living), **tally}
-            if not failed:
+            if run.ideation:
+                run.result = {
+                    "reason": reason, "living": sorted(living), "mode": IDEATION_MODE, "ties": [],
+                    "finalists": run.ideation.finalists(), "rounds": run.ideation.history,
+                    "replacements": run.ideation.replacements,
+                }
+                tally = {"ties": []}
+                if not failed:
+                    await self.emit("run.ended", {
+                        "finalists": run.result["finalists"], "baseline": [], "reason": reason,
+                        "mode": IDEATION_MODE, "rounds": len(run.ideation.history), "living": sorted(living),
+                    })
+            else:
+                tally = run.ledger.finalists(living)
+                run.result = {"reason": reason, "living": sorted(living), **tally}
+            if not failed and not run.ideation:
                 await self.emit("run.ended", self._run_ended_payload(run.result))
                 for tied in tally["ties"]:
                     await self._human_request("tie", {"branch_ids": tied}, requested_by=WORLD_ID)
@@ -272,6 +335,8 @@ class World:
         run = self.run
         if run is None or run.state not in ("preparing", "ready", "running"):
             return
+        if run.ideation:
+            await run.ideation.observe(envelope)
         run.ledger.observe(envelope)
         kind = envelope.get("type")
         sender = envelope.get("from")
@@ -289,6 +354,8 @@ class World:
     async def _spawn(self, sender: str, body: dict) -> None:
         persona = body.get("persona") or {}
         try:
+            if self.run.ideation and not self.run.ideation.accepts_spawn(persona):
+                raise ValueError("that replacement was already filled")
             agent_id = await self.run.launcher.start(persona)
             self.spawn(self._announce_birth(self.run, persona, sender))
             reply = {"type": "spawn.result", "body": {"ok": True, "agent_id": agent_id}}
@@ -298,6 +365,9 @@ class World:
             await self.town.send(sender, reply)
         except DeadPeerError:
             pass  # the designer died after asking, the newcomer still gets born
+
+    async def announce_birth(self, run: Run, persona: dict, requested_by: str) -> None:
+        await self._announce_birth(run, persona, requested_by)
 
     async def _announce_birth(self, run: Run, persona: dict, requested_by: str) -> None:
         """Emit agent.born once the newcomer has actually joined the town."""
@@ -349,7 +419,26 @@ class World:
             "resting": sorted(run.ledger.resting),
             "dead": sorted(run.ledger.dead),
             "human_requests": list(run.human_requests.values()),
+            "mode": run.request.mode,
+            "ideation": self._ideation_status(run),
             "result": run.result,
+        }
+
+    @staticmethod
+    def _ideation_status(run: Run) -> dict | None:
+        loop = run.ideation
+        if loop is None:
+            return None
+        r = loop.round
+        return {
+            "round": r.number if r else len(loop.history),
+            "phase": r.phase if r else "done",
+            "ideas_in_round": (len(r.originals) + len(r.twists)) if r else 0,
+            "ballots": len(r.ballots) if r else 0,
+            "selected": loop.selected,
+            "rounds_done": len(loop.history),
+            "participants": loop.participants,
+            "replacements": loop.replacements,
         }
 
 

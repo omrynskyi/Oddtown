@@ -141,3 +141,28 @@ def test_mock_world_plays_a_full_run_through_the_observer(start_server, start_ob
 def test_no_two_branches_say_the_same_thing(rng_seed):
     texts = [p["text"] for _, t, _, p in run_timeline(SEED, rng_seed) if t == "branch.created"]
     assert len(texts) == len(set(texts))
+
+
+MESSAGES = {"idea.share", "idea.pitch", "merge.propose"}
+REPLIES = {"idea.share": "idea.reaction", "idea.pitch": "pitch.response", "merge.propose": "merge.response"}
+
+
+@pytest.mark.parametrize("rng_seed", [1, 7, 42, 99])
+def test_characters_message_each_other_and_get_answers(rng_seed):
+    run = run_timeline(SEED, rng_seed)
+    messages = [s for s in run if s[1] in MESSAGES]
+    replies = [s for s in run if s[1] in REPLIES.values()]
+    assert len(messages) > 10 and len(messages) == len(replies)
+
+    # Every message is answered by its recipient, to its sender, a moment later.
+    for (t, type, sender, body), (reply_t, reply_type, replier, reply) in zip(messages, replies):
+        assert reply_type == REPLIES[type] and replier == body["to"] and reply["to"] == sender != replier
+        assert 1 < reply_t - t < 2
+        assert body["note"] and reply["text"]
+
+    # Between them, the mock run has agreement and disagreement.
+    outcomes = {r.get("answer") or r["persuaded"] for _, _, _, r in replies}
+    assert {"accept", "reject"} <= outcomes or {True, False} <= outcomes
+    died_at = next(t for t, type, _, _ in run if type == "agent.died")
+    dead = next(a for _, type, a, _ in run if type == "agent.died")
+    assert not [s for s in messages + replies if s[2] == dead and s[0] > died_at]

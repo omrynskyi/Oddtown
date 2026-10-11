@@ -148,6 +148,17 @@ OBJECTIONS = [
     "There is no moment in it anyone would remember.",
 ]
 
+# What characters say to each other, by how the other one answers. Lines are 200 characters or fewer.
+NOTES = [
+    "Have a look at this one. It might surprise you.",
+    "You of all people should hear this.",
+    "I think this is the one worth backing.",
+    "Tell me where this goes wrong.",
+]
+YES = ["Yes. Finally, someone gets it.", "Fine, I'm in.", "That works. I'll back it.", "You've talked me round."]
+NO = ["No. That's not what I'd build.", "Absolutely not.", "You lost me at the second line.", "That sinks in the first storm."]
+COUNTER = ["Close. Here's my version.", "Only if we add a twist of my own."]
+
 ACTIONS = ["twist", "back", "pitch", "trash", "merge", "ignore"]
 WEIGHTS = [35, 25, 12, 10, 10, 8]
 
@@ -169,6 +180,8 @@ def prepare_timeline(seed: str) -> list[Step]:
 def run_timeline(seed: str, rng_seed: int = 7) -> list[Step]:
     """From run.started to run.ended: gossip, one constraint, one death and replacement."""
     rng = random.Random(rng_seed)
+    # Messages between characters get their own random stream, so adding them left the run itself unchanged.
+    talk = random.Random(f"{rng_seed}-talk")
     steps: list[Step] = [
         (0.0, "run.started", None, {}),
         (0.2, "world.event", None, {"kind": "seed", "text": seed}),
@@ -197,6 +210,30 @@ def run_timeline(seed: str, rng_seed: int = 7) -> list[Step]:
             steps.append((t + 0.15, "unendorse", agent, {"branch_id": dropped}))
         endorsed[agent].append(branch_id)
         steps.append((t + 0.2, "endorse", agent, {"branch_id": branch_id}))
+
+    def converse(t, agent, action, branch_id):
+        """A message to a peer and its reply, a second or so later. Both are from characters still alive."""
+        peers = sorted(a for a in living if a != agent)
+        # The replies must land before the one death, so no one speaks in the last moments before it.
+        if not peers or (not died and t >= DEATH_AT - 1.7):
+            return
+        peer, note = talk.choice(peers), talk.choice(NOTES)
+        yes = talk.random() < (0.3 if action == "trash" else 0.6)
+        say = talk.choice(YES if yes else NO)
+        if action == "merge":
+            send = ("merge.propose", {"to": peer, "branch_ids": [branch_id], "note": note})
+            answer = "accept" if yes else talk.choice(["reject", "counter"])
+            if answer == "counter":
+                say = talk.choice(COUNTER)
+            reply = ("merge.response", {"to": agent, "answer": answer, "text": say})
+        elif action == "pitch":
+            send = ("idea.pitch", {"to": peer, "branch_id": branch_id, "note": note})
+            reply = ("pitch.response", {"to": agent, "branch_id": branch_id, "persuaded": yes, "text": say})
+        else:
+            send = ("idea.share", {"to": peer, "branch_id": branch_id, "note": note})
+            reply = ("idea.reaction", {"to": agent, "branch_id": branch_id, "answer": "accept" if yes else "reject", "text": say})
+        steps.append((t + 0.3, send[0], agent, send[1]))
+        steps.append((t + 1.6, reply[0], peer, reply[1]))
 
     t = 1.0
     while True:
@@ -248,18 +285,22 @@ def run_timeline(seed: str, rng_seed: int = 7) -> list[Step]:
             decision["target_branch"] = parent["id"]
             if rng.random() < 0.5:
                 back(t, agent, branch_id)
+            converse(t, agent, action, branch_id)
         elif action == "merge":
             a, b = rng.sample(others, 2)
             authors = list(dict.fromkeys([agent, *b["authors"]]))
             text = f"{a['text']}, combined with {b['text'][0].lower()}{b['text'][1:]}"
             new_branch(t, agent, [a["id"], b["id"]], "merge", authors, text)
             decision["target_branch"] = a["id"]
+            converse(t, agent, action, a["id"])
         elif action == "back":
             target = rng.choice(others)
             decision["target_branch"] = target["id"]
             back(t, agent, target["id"])
+            converse(t, agent, action, target["id"])
         elif action in ("pitch", "trash"):
             decision["target_branch"] = rng.choice(others)["id"]
+            converse(t, agent, action, decision["target_branch"])
 
     support = {b["id"]: [a for a in living if b["id"] in endorsed[a]] for b in branches if b["id"] != "br_000"}
     ranked = sorted(support, key=lambda id: (-len(support[id]), id))[:3]

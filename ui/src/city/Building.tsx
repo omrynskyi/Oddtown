@@ -17,7 +17,21 @@ function easeOutBack(t: number) {
 }
 
 /** A character's building. It pops up out of its lot with a burst of dust the moment it mounts. */
-export function Building({ model, lot }: { model: string; lot: Placement }) {
+export function Building({
+  model,
+  lot,
+  selected = false,
+  onHover,
+  onLeave,
+  onSelect,
+}: {
+  model: string;
+  lot: Placement;
+  selected?: boolean;
+  onHover?: () => void;
+  onLeave?: () => void;
+  onSelect?: () => void;
+}) {
   const group = useRef<Group>(null);
   const start = useRef<number | null>(null);
 
@@ -32,9 +46,17 @@ export function Building({ model, lot }: { model: string; lot: Placement }) {
   });
 
   return (
-    <group position={lot.position}>
+    <group
+      position={lot.position}
+      onPointerOver={onHover}
+      onPointerOut={onLeave}
+      onClick={(event) => {
+        event.stopPropagation();
+        onSelect?.();
+      }}
+    >
       <group ref={group} rotation={[0, lot.rotation, 0]} scale={[1.2, 0.001, 1.2]}>
-        <Model name={model} />
+        <Model name={model} outlined={selected} />
       </group>
       {!reducedMotion && <Dust />}
     </group>

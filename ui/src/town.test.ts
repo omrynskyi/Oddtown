@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { AnyEvent } from "./events";
 import mockRun from "./fixtures/mock-run.json";
-import { initialTown, livingSupport, townReducer, type Town } from "./town";
+import { initialTown, isComposted, isProposal, livingSupport, townReducer, type Town } from "./town";
 
 // The fixture is a full scripted run from the mock world service.
 // Regenerate it with: .venv/bin/python -m observer.mock_script > ui/src/fixtures/mock-run.json
@@ -63,6 +63,15 @@ describe("town reducer", () => {
     expect(townReducer(ended, { kind: "event", event: replayedCreate }).phase).toBe("ended");
   });
 
+  it("rebuilds a saved run at any point on its event timeline", () => {
+    const midway = upTo("run.started");
+    const replayed = townReducer(initialTown, { kind: "replay", runId: RUN, seed: null, events: midway });
+    expect(replayed.phase).toBe("running");
+    expect(replayed.lastSeq).toBe(midway.at(-1)!.seq);
+    expect(replayed.lots.filter(Boolean)).toHaveLength(6);
+    expect(townReducer(initialTown, { kind: "replay", runId: RUN, seed: null, events }).phase).toBe("ended");
+  });
+
   it("keeps each character's latest line, including its last words", () => {
     const decisions = events.filter((e) => e.type === "agent.decision");
     const firstSpeaker = decisions[0].agent_id!;
@@ -118,9 +127,156 @@ describe("town reducer", () => {
 
   it("ignores event types the UI doesn't use", () => {
     const town = play(upTo("run.ready"));
-    const share = { run_id: RUN, seq: town.lastSeq + 1, ts: 0, type: "idea.share", agent_id: "char_dez", payload: {} };
+    const share = { run_id: RUN, seq: town.lastSeq + 1, ts: 0, type: "human.request", agent_id: "char_dez", payload: {} };
     const next = townReducer(town, { kind: "event", event: share });
     expect({ ...next, lastSeq: town.lastSeq }).toEqual(town);
     expect(next.lastSeq).toBe(town.lastSeq + 1);
+  });
+
+  describe("letters between houses", () => {
+    const base = play(upTo("run.started"));
+    const send = (type: string, agent: string, payload: Record<string, unknown>, from = base) =>
+      townReducer(from, { kind: "event", event: { run_id: RUN, seq: from.lastSeq + 1, ts: 0, type, agent_id: agent, payload } });
+
+    it("makes a letter of each message, carrying the note", () => {
+      for (const type of ["idea.share", "idea.pitch", "merge.propose"]) {
+        const town = send(type, "char_dez", { to: "char_marg", note: " Look at this " });
+        expect(town.interactions).toEqual([{ seq: base.lastSeq + 1, from: "char_dez", to: "char_marg", kind: "letter", text: "Look at this" }]);
+      }
+    });
+
+    it("reads each reply as agree, disagree or mixed", () => {
+      const kind = (type: string, payload: Record<string, unknown>) => send(type, "char_marg", { to: "char_dez", ...payload }).interactions[0].kind;
+      expect(kind("idea.reaction", { answer: "accept" })).toBe("agree");
+      expect(kind("idea.reaction", { answer: "reject" })).toBe("disagree");
+      expect(kind("pitch.response", { persuaded: true })).toBe("agree");
+      expect(kind("pitch.response", { persuaded: false })).toBe("disagree");
+      expect(kind("merge.response", { answer: "accept" })).toBe("agree");
+      expect(kind("merge.response", { answer: "reject" })).toBe("disagree");
+      expect(kind("merge.response", { answer: "counter" })).toBe("mixed");
+    });
+
+    it("ignores letters to or from people who aren't in town, or to yourself", () => {
+      expect(send("idea.share", "char_dez", { to: "char_nobody" }).interactions).toEqual([]);
+      expect(send("idea.share", "char_nobody", { to: "char_dez" }).interactions).toEqual([]);
+      expect(send("idea.share", "char_dez", { to: "char_dez" }).interactions).toEqual([]);
+      expect(send("idea.share", "char_dez", {}).interactions).toEqual([]);
+    });
+
+    it("keeps only the latest few, and none from the dead after they leave", () => {
+      const town = play(events);
+      expect(town.interactions.length).toBeGreaterThan(0);
+      expect(town.interactions.length).toBeLessThanOrEqual(8);
+      const seqs = town.interactions.map((i) => i.seq);
+      expect(seqs).toEqual([...seqs].sort((a, b) => a - b));
+      const died = events.find((e) => e.type === "agent.died")!.agent_id!;
+      const afterDeath = send("idea.share", "char_dez", { to: died }, town);
+      expect(afterDeath.interactions).toEqual(town.interactions);
+    });
+
+    it("sees the mock run's agreement and disagreement", () => {
+      const kinds = new Set<string>();
+      events.reduce((t, event) => {
+        const next = townReducer(t, { kind: "event", event });
+        next.interactions.forEach((i) => kinds.add(i.kind));
+        return next;
+      }, townReducer(initialTown, { kind: "submitted", runId: RUN, seed: "a coffee subscription" }));
+      expect(kinds).toContain("letter");
+      expect(kinds).toContain("agree");
+      expect(kinds).toContain("disagree");
+    });
+  });
+
+  describe("town news and history", () => {
+    const town = play(events);
+    const base = play(upTo("run.started"));
+    const send = (type: string, agent: string | null, payload: Record<string, unknown>, from = base) =>
+      townReducer(from, { kind: "event", event: { run_id: RUN, seq: from.lastSeq + 1, ts: 0, type, agent_id: agent, payload } });
+
+    it("posts news for twists, merges, backing, the rule, the death, the lead and the end", () => {
+      const kinds = new Set(town.feed.map((f) => f.kind));
+      for (const kind of ["seed", "twist", "merge", "back", "drop", "constraint", "death", "birth", "lead", "end"]) expect(kinds).toContain(kind);
+      const seqs = town.feed.map((f) => f.seq);
+      expect(seqs).toEqual([...seqs].sort((a, b) => a - b));
+    });
+
+    it("keeps no news from before the run started", () => {
+      expect(play(upTo("run.ready")).feed).toEqual([]);
+    });
+
+    it("keeps every letter and every decision with its reason", () => {
+      const sent = events.filter((e) => ["idea.share", "idea.reaction", "idea.pitch", "pitch.response", "merge.propose", "merge.response"].includes(e.type));
+      expect(town.letters.length).toBeGreaterThan(8);
+      expect(town.letters.length).toBeLessThanOrEqual(sent.length);
+      const decisions = Object.values(town.decisions).flat();
+      expect(decisions).toHaveLength(events.filter((e) => e.type === "agent.decision").length);
+      expect(decisions.every((d) => d.reason)).toBe(true);
+    });
+
+    it("keeps the finalists and baseline from run.ended", () => {
+      expect(town.finalists?.map((f) => f.branch_id)).toEqual(["br_002", "br_001", "br_003"]);
+      expect(town.baseline).toHaveLength(3);
+    });
+
+    it("records objections and backing reasons, with news for the objection", () => {
+      const objected = send("objection", "char_dez", { branch_id: "br_000", reason: "Too vague" });
+      expect(objected.objections).toEqual([{ seq: base.lastSeq + 1, agentId: "char_dez", branchId: "br_000", reason: "Too vague" }]);
+      expect(objected.feed.at(-1)).toMatchObject({ kind: "object", actor: "char_dez", branchId: "br_000" });
+      const backed = send("endorse", "char_dez", { branch_id: "br_000", reason: "It's simple" });
+      expect(backed.backingReasons["char_dez|br_000"]).toBe("It's simple");
+    });
+
+    it("takes the summary, and leaves news out when it failed", () => {
+      const summary = { headline: "Jars win", verdicts: [{ branch_id: "br_002", title: "Jars", why: "", risk: "" }], buckets: [], moments: [], baseline: [] };
+      const done = send("run.summary", null, summary, town);
+      expect(done.summary).toMatchObject(summary);
+      expect(done.feed.at(-1)).toMatchObject({ kind: "summary", quote: "Jars win" });
+      const failed = send("run.summary", null, { error: "timeout" }, town);
+      expect(failed.summary?.error).toBe("timeout");
+      expect(failed.feed).toEqual(town.feed);
+    });
+  });
+
+  describe("proposals and composting", () => {
+    const started = upTo("run.started").map((e) => (e.type === "run.started" ? { ...e, payload: { quorum: 2 } } : e));
+    const base = play(started);
+    const run = (steps: [string, string | null, Record<string, unknown>][], from = base) =>
+      steps.reduce((town, [type, agent_id, payload]) => townReducer(town, { kind: "event", event: { run_id: RUN, seq: town.lastSeq + 1, ts: 0, type, agent_id, payload } }), from);
+    const created = (id: string, authors: string[]): [string, string, Record<string, unknown>] => [
+      "branch.created",
+      authors[0],
+      { branch_id: id, parent_ids: [], op: "twist", authors, text: `idea ${id}` },
+    ];
+
+    it("makes a branch a proposal once two living characters besides its authors back it", () => {
+      const authorsOnly = run([
+        created("br_p", ["char_dez", "char_rook"]),
+        ["endorse", "char_dez", { branch_id: "br_p" }],
+        ["endorse", "char_rook", { branch_id: "br_p" }],
+        ["endorse", "char_priya", { branch_id: "br_p" }],
+      ]);
+      expect(isProposal(authorsOnly, "br_p")).toBe(false);
+
+      const proposal = run([["endorse", "char_anselm", { branch_id: "br_p" }]], authorsOnly);
+      expect(isProposal(proposal, "br_p")).toBe(true);
+      expect(proposal.proposals).toEqual(["br_p"]);
+      expect(proposal.feed.filter((f) => f.kind === "proposal")).toMatchObject([{ branchId: "br_p", quote: "idea br_p" }]);
+
+      const died = run([["agent.died", "char_anselm", { picked: [] }]], proposal);
+      expect(isProposal(died, "br_p")).toBe(false);
+      expect(died.proposals).toEqual([]);
+      // Without a quorum from the world, as in older runs, nothing is a proposal.
+      expect(isProposal({ ...proposal, quorum: null }, "br_p")).toBe(false);
+    });
+
+    it("composts a withdrawn branch until someone backs it", () => {
+      const withdrawn = run([created("br_w", ["char_dez"]), ["branch.withdraw", "char_dez", { branch_id: "br_w", why: "unliked" }]]);
+      expect(isComposted(withdrawn, "br_w")).toBe(true);
+      const backed = run([["endorse", "char_rook", { branch_id: "br_w" }]], withdrawn);
+      expect(isComposted(backed, "br_w")).toBe(false);
+      expect(isComposted(run([["unendorse", "char_rook", { branch_id: "br_w" }]], backed), "br_w")).toBe(false);
+      // A withdraw that lands after someone backed it changes nothing.
+      expect(isComposted(run([["branch.withdraw", "char_dez", { branch_id: "br_w" }]], backed), "br_w")).toBe(false);
+    });
   });
 });

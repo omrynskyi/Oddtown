@@ -40,10 +40,21 @@ export interface CityPlan {
   /** Six lots in the order characters move in, left to right across the screen. */
   lots: Placement[];
   scenery: Placement[];
+  /** Cars that periodically cross a full street, with their timing fixed by the run seed. */
+  traffic: TrafficRoute[];
   /** The building each newcomer gets, in birth order. Shuffled per run. */
   buildingOrder: string[];
   /** Every block the platform is made of, in tiles, for framing the camera. */
   blocks: [number, number][];
+}
+
+export interface TrafficRoute {
+  model: string;
+  from: [number, number, number];
+  to: [number, number, number];
+  rotation: number;
+  /** A normalized offset keeps multiple cars from entering the town together. */
+  phase: number;
 }
 
 /** Small seeded random number generator (mulberry32). */
@@ -160,6 +171,7 @@ export function planCity(seed: string): CityPlan {
 
   const world = (x: number, z: number): [number, number, number] => [x * TILE, 0, z * TILE];
   const scenery: Placement[] = [];
+  const traffic: TrafficRoute[] = [];
 
   // Road pieces, chosen so each one opens onto exactly the road blocks next to it. The ends of
   // the streets run off the edge of the platform, as if the town carries on.
@@ -174,13 +186,28 @@ export function planCity(seed: string): CityPlan {
     const model = road === crossing ? "road_straight_crossing" : road.model;
     scenery.push({ model, position: world(road.x, road.z), rotation: road.rotation });
   }
-  for (const road of straights.slice(1, 3)) {
+  const trafficStreets = new Set<string>();
+  for (const road of straights.slice(1)) {
+    if (traffic.length >= 2) break;
     const alongX = Math.abs(Math.sin(road.rotation)) > 0.5;
+    const streetKey = alongX ? `x:${road.z}` : `z:${road.x}`;
+    if (trafficStreets.has(streetKey)) continue;
+    trafficStreets.add(streetKey);
     const side = rand() < 0.5 ? -0.5 : 0.5;
-    scenery.push({
+    const street = roadTiles.filter(([x, z]) => (alongX ? z === road.z : x === road.x));
+    const coordinates = street.map(([x, z]) => (alongX ? x : z));
+    const lo = Math.min(...coordinates) * TILE - TILE * 0.72;
+    const hi = Math.max(...coordinates) * TILE + TILE * 0.72;
+    const fixed = (alongX ? road.z : road.x) * TILE + side;
+    const forward = rand() < 0.5;
+    const start: [number, number, number] = alongX ? [lo, 0.1, fixed] : [fixed, 0.1, lo];
+    const end: [number, number, number] = alongX ? [hi, 0.1, fixed] : [fixed, 0.1, hi];
+    traffic.push({
       model: pick(["car_taxi", "car_sedan", "car_hatchback", "car_stationwagon"]),
-      position: [road.x * TILE + (alongX ? 0 : side), 0.1, road.z * TILE + (alongX ? side : 0)],
-      rotation: road.rotation,
+      from: forward ? start : end,
+      to: forward ? end : start,
+      rotation: road.rotation + (forward ? 0 : Math.PI),
+      phase: traffic.length * 0.5,
     });
   }
 
@@ -201,6 +228,7 @@ export function planCity(seed: string): CityPlan {
   return {
     lots: lots.map((l) => ({ model: "base", position: world(l.x, l.z), rotation: l.rotation })),
     scenery,
+    traffic,
     buildingOrder: shuffle(BUILDINGS),
     blocks: [...roadTiles, ...lots.map((l): [number, number] => [l.x, l.z]), ...ground.values()],
   };
