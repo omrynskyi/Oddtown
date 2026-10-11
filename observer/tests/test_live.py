@@ -1,61 +1,16 @@
 """Tests against a real observer process, the way agents and the UI will use it."""
 
 import json
-import os
-import socket
 import subprocess
 import sys
 import threading
-import time
 import urllib.request
-from pathlib import Path
 
 import pytest
 from websockets.sync.client import connect
 
 from observer.client import emit
-
-REPO = Path(__file__).resolve().parents[2]
-
-
-def free_port():
-    with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
-
-
-@pytest.fixture
-def start_observer(tmp_path):
-    """Start an observer on a database file. Call it again to restart on the same file."""
-    db = tmp_path / "observer.db"
-    procs = []
-
-    def start():
-        for p in procs:
-            p.terminate()
-            p.wait(5)
-        port = free_port()
-        proc = subprocess.Popen(
-            [sys.executable, "-m", "uvicorn", "observer.app:app", "--port", str(port), "--log-level", "warning"],
-            cwd=REPO,
-            env={**os.environ, "OBSERVER_DB": str(db)},
-        )
-        procs.append(proc)
-        url = f"http://127.0.0.1:{port}"
-        deadline = time.monotonic() + 10
-        while True:
-            try:
-                urllib.request.urlopen(f"{url}/runs", timeout=0.5)
-                return url
-            except OSError:
-                if time.monotonic() > deadline:
-                    raise RuntimeError("observer did not start")
-                time.sleep(0.1)
-
-    yield start
-    for p in procs:
-        p.terminate()
-        p.wait(5)
+from observer.tests.conftest import REPO
 
 
 def test_seq_survives_a_restart(start_observer):
