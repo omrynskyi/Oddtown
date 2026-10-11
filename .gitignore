@@ -1,2 +1,15 @@
 KayKit_City_Builder_Bits_1.0_FREE.zip
 .DS_Store
+KayKit_City_Builder_Bits_1.0_FREE/
+
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+
+# Observer data
+observer.db*
+
+# UI
+node_modules/
+ui/dist/
