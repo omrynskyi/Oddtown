@@ -1,0 +1,87 @@
+"""What a character process holds: its transport plus the registry.
+
+Town is the only thing agent code needs from the platform. It fills in the
+envelope header, finds peers by id, and when a send bounces it deletes the
+dead peer's record so nobody routes to it again.
+"""
+
+from __future__ import annotations
+
+import logging
+import uuid
+from datetime import datetime, timezone
+
+from registry.adapter import Record, Registry
+from transport.adapter import DeadPeerError, Envelope, Handler, Transport
+
+log = logging.getLogger(__name__)
+
+
+def now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+
+
+class Town:
+    def __init__(self, agent_id: str, transport: Transport, registry: Registry):
+        self.agent_id = agent_id
+        self.transport = transport
+        self.registry = registry
+
+    @classmethod
+    def from_env(cls, agent_id: str) -> "Town":
+        from registry.adapter import create_registry
+        from transport.adapter import create_transport
+
+        return cls(agent_id, create_transport(agent_id), create_registry())
+
+    async def join(self, record: Record, handler: Handler) -> None:
+        """Start receiving, then publish this agent's record with its address."""
+        await self.transport.start(handler)
+        await self.registry.register({**record, "id": self.agent_id, "address": self.transport.address})
+
+    async def leave(self) -> None:
+        """Delete this agent's record and close its transport. Call it on death."""
+        await self.registry.remove(self.agent_id)
+        await self.transport.close()
+        await self.registry.close()
+
+    def _stamp(self, envelope: Envelope, to: str | None) -> Envelope:
+        return {
+            "msg_id": str(uuid.uuid4()),
+            "sent_at": now_iso(),
+            **envelope,
+            "from": self.agent_id,
+            "to": to,
+        }
+
+    async def send(self, to: str, envelope: Envelope) -> Envelope:
+        """Point to point. Raises DeadPeerError if the peer is gone."""
+        record = await self.registry.get(to)
+        if record is None:
+            raise DeadPeerError(to, "not in the registry")
+        stamped = self._stamp(envelope, to)
+        try:
+            await self.transport.send(to, record["address"], stamped)
+        except DeadPeerError:
+            await self._forget(to)
+            raise
+        return stamped
+
+    async def _forget(self, peer: str) -> None:
+        try:
+            await self.registry.remove(peer)
+        except Exception:
+            log.exception("could not remove %s from the registry", peer)
+
+    async def broadcast(self, envelope: Envelope) -> list[str]:
+        """To every living record, the world service included. Returns who bounced."""
+        records = await self.registry.search()
+        recipients = {r["id"]: r["address"] for r in records if r["id"] != self.agent_id}
+        dead = await self.transport.broadcast(recipients, self._stamp(envelope, None))
+        for peer in dead:
+            await self._forget(peer)
+        return dead
+
+    async def characters(self) -> list[Record]:
+        """Every living character except this one."""
+        return [r for r in await self.registry.search(kind="character") if r["id"] != self.agent_id]
