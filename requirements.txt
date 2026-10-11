@@ -27,5 +27,7 @@ pytest-asyncio==1.4.0
 # Trait distances when refining a replacement persona
 numpy==2.5.4
 
-# Still open in the plan: add the LLM client here once the team picks models.
+# LLM clients (agents/llm.py). big-pickle on OpenCode Zen goes through httpx above.
+# anthropic is only for personas that name a Claude model. The mock model needs nothing.
 # Plain asyncio, so no langgraph. No embeddings.
+anthropic==1.13.0

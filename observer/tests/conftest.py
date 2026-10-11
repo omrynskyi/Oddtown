@@ -10,6 +10,8 @@ import pytest
 
 # Importing observer.app builds the module-level app. Keep it off the real observer.db.
 os.environ["OBSERVER_DB"] = ":memory:"
+# No LLM calls at the end of test runs. test_summary turns it on with the mock model.
+os.environ["OBSERVER_SUMMARY"] = "0"
 
 REPO = Path(__file__).resolve().parents[2]
 

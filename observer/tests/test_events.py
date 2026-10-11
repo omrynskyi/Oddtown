@@ -16,17 +16,25 @@ SAMPLE_PAYLOADS = {
     "run.created": {"seed": "a coffee subscription"},
     "agent.born": {"persona": MARGUERITE},
     "run.ready": {"agent_ids": ["char_7f3a", "char_19bc"]},
-    "run.started": {},
+    "run.started": {"quorum": 2},
     "agent.decision": {"action": "twist", "say": "Beans in an oak chest, once a year.", "reason": "Things should outlast you"},
     "branch.created": {"branch_id": "br_042", "parent_ids": ["br_017"], "op": "twist", "authors": ["char_7f3a"], "text": "Coffee beans delivered once a year in an oak chest"},
     "endorse": {"branch_id": "br_042"},
     "unendorse": {"branch_id": "br_042"},
+    "branch.withdraw": {"branch_id": "br_042", "why": "unliked"},
     "world.event": {"kind": "constraint", "text": "It has to work with no electricity"},
     "agent.last_words": {"text": "Keep the chest. Lose the app."},
     "agent.died": {"picked": ["char_19bc", "char_2d4e", "char_88a1"]},
     "run.ended": {
         "finalists": [{"branch_id": "br_042", "text": "Oak chest of beans", "champions": ["char_7f3a"], "minority_report": "No delivery plan"}],
         "baseline": ["Idea one", "Idea two", "Idea three"],
+    },
+    "run.summary": {
+        "headline": "The town wants a chest that lasts.",
+        "verdicts": [{"branch_id": "br_042", "title": "The oak chest", "why": "Everyone remembers it", "risk": "Shipping"}],
+        "buckets": [{"name": "Built to last", "emoji": "🌳", "blurb": "Things you keep", "branch_ids": ["br_042"]}],
+        "moments": ["Dez twisted it into a chest."],
+        "baseline": ["Idea one"],
     },
 }
 

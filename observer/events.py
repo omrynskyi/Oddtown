@@ -58,7 +58,7 @@ class RunReady(Payload):
 
 
 class RunStarted(Payload):
-    pass
+    quorum: int | None = None  # backers besides its authors that make a branch a proposal; None when proposals are off
 
 
 class AgentDecision(Payload):
@@ -77,6 +77,13 @@ class BranchCreated(Payload):
 
 class Endorse(Payload):
     branch_id: str
+
+
+class BranchWithdraw(Payload):
+    """An author retired one of its unbacked branches, and every character composts it until someone backs it."""
+
+    branch_id: str
+    why: Literal["unliked", "budget", "died"] | None = None  # everyone it was shown to turned it down, over budget, author died
 
 
 class WorldEvent(Payload):
@@ -104,6 +111,32 @@ class RunEnded(Payload):
     baseline: list[str]
 
 
+class Verdict(Payload):
+    branch_id: str
+    title: str
+    why: str = ""
+    risk: str = ""
+
+
+class Bucket(Payload):
+    name: str
+    emoji: str = ""
+    blurb: str = ""
+    branch_ids: list[str]
+
+
+class RunSummary(Payload):
+    """The observer's own end-of-run summary. On a failed call only `error` is set."""
+
+    headline: str = ""
+    verdicts: list[Verdict] = Field(default_factory=list, max_length=3)
+    buckets: list[Bucket] = Field(default_factory=list)
+    moments: list[str] = Field(default_factory=list)
+    baseline: list[str] = Field(default_factory=list)
+    model: str | None = None
+    error: str | None = None
+
+
 PAYLOADS: dict[str, type[Payload]] = {
     "run.created": RunCreated,
     "agent.born": AgentBorn,
@@ -113,10 +146,12 @@ PAYLOADS: dict[str, type[Payload]] = {
     "branch.created": BranchCreated,
     "endorse": Endorse,
     "unendorse": Endorse,
+    "branch.withdraw": BranchWithdraw,
     "world.event": WorldEvent,
     "agent.last_words": AgentLastWords,
     "agent.died": AgentDied,
     "run.ended": RunEnded,
+    "run.summary": RunSummary,
 }
 
 

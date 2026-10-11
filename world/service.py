@@ -42,6 +42,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+from agents import config as agent_config
 from observer.client import aemit
 from transport.adapter import DeadPeerError
 from transport.town import Town
@@ -184,7 +185,8 @@ class World:
         run.state = "running"
         run.started_at = time.monotonic()
         self.spawn(self._watchdog(run))
-        await self.emit("run.started", {})
+        # The characters' quorum, so the UI badges the same proposals they see.
+        await self.emit("run.started", {"quorum": agent_config.QUORUM if agent_config.on("quorum") else None})
         seed_branch = {
             "branch_id": SEED_BRANCH_ID,
             "parent_ids": [],

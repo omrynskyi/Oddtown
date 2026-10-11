@@ -61,12 +61,24 @@ body {
 
 .ask {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  width: min(760px, 100% - 32px);
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  min-height: 0;
+  width: calc(100% - 32px);
   margin: 0 auto;
-  padding-bottom: 12vh;
+  /* Let the recent-town list finish flush with the viewport edge. */
+  padding-bottom: 0;
+  overflow: hidden;
+}
+
+.ask-main {
+  align-self: end;
+  width: min(760px, 100%);
+  margin: 0 auto 8px;
+}
+
+.recent-runs-dock {
+  align-self: end;
 }
 
 .ask-bubble {
@@ -162,6 +174,240 @@ body {
   font-weight: 600;
 }
 
+.ask-feedback {
+  margin: 36px 0 0 28px;
+}
+
+.ask-feedback .ask-error {
+  margin: 0 0 8px;
+}
+
+.text-button,
+.run-link,
+.refresh-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--asphalt);
+  font: 700 17px / 1.3 var(--font);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.run-link {
+  margin: 0 0 12px 28px;
+  color: var(--asphalt-soft);
+  font-size: 16px;
+}
+
+.text-button:focus-visible,
+.refresh-button:focus-visible,
+.close-button:focus-visible,
+.stop-button:focus-visible {
+  outline: 3px solid var(--taxi);
+  outline-offset: 3px;
+}
+
+.run-inspector {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  height: clamp(272px, 52dvh, 380px);
+  padding: 0;
+}
+
+.run-inspector-header {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  width: min(440px, 100%);
+  margin: 0 auto 10px;
+  padding: 4px 0 10px;
+  background: var(--sky);
+}
+
+.run-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.run-inspector h2 {
+  margin: 0;
+  font-size: 30px;
+  line-height: 1;
+}
+
+.close-button {
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--asphalt);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--asphalt);
+  font: 700 24px / 1 var(--font);
+  cursor: pointer;
+}
+
+.run-stack {
+  position: relative;
+  grid-row: 2;
+  width: min(440px, 100%);
+  height: 100%;
+  margin-inline: auto;
+  overflow: hidden;
+  overscroll-behavior: contain;
+  touch-action: none;
+  cursor: grab;
+  isolation: isolate;
+}
+
+.run-stack:active {
+  cursor: grabbing;
+}
+
+.run-stack:focus-visible {
+  outline: 3px solid rgb(63 69 76 / 0.24);
+  outline-offset: 4px;
+}
+
+.run-stack::before {
+  content: "";
+  position: absolute;
+  z-index: 110;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 92px;
+  background: linear-gradient(to bottom, var(--sky) 0, rgb(143 207 234 / 0.72) 30%, transparent 100%);
+  pointer-events: none;
+}
+
+.run-stack-card {
+  position: absolute;
+  top: 0;
+  right: 4px;
+  left: 4px;
+  height: 62px;
+  transform-origin: 50% 0;
+  will-change: transform, opacity, filter;
+}
+
+.run-row {
+  display: flex;
+  width: 100%;
+  height: 62px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 12px;
+  background: var(--kerb);
+  border: var(--outline);
+  border-radius: 22px;
+  box-shadow: var(--lift);
+  transform-origin: 50% 100%;
+  animation: recent-town-arrive 540ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes recent-town-arrive {
+  from {
+    transform: translateY(24px) rotate(0.7deg) scale(0.975);
+    box-shadow: 0 2px 0 var(--asphalt);
+  }
+
+  to {
+    transform: translateY(0) rotate(0) scale(1);
+    box-shadow: var(--lift);
+  }
+}
+
+.run-inspector > .run-muted,
+.run-inspector > .run-error {
+  position: absolute;
+  z-index: 30;
+  top: 56px;
+  left: 50%;
+  width: min(440px, 100%);
+  transform: translateX(-50%);
+}
+
+.run-row-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.run-row-copy span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-row-copy span { overflow: hidden; font-size: 14px; }
+
+.run-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.view-run-button {
+  padding: 7px 10px;
+  border: 2px solid var(--asphalt);
+  border-radius: 12px;
+  background: var(--taxi);
+  color: var(--asphalt);
+  font: 800 14px / 1 var(--font);
+  box-shadow: 0 3px 0 var(--asphalt);
+  cursor: pointer;
+}
+
+.stop-button {
+  flex: none;
+  padding: 8px 12px;
+  border: 2px solid var(--brick);
+  border-radius: 12px;
+  background: #fff1ee;
+  color: var(--brick);
+  font: 800 15px / 1 var(--font);
+  cursor: pointer;
+}
+
+.stop-button:active:not(:disabled) { transform: translateY(2px); }
+.stop-button:disabled, .view-run-button:disabled, .refresh-button:disabled { cursor: default; opacity: .55; }
+.run-muted { margin: 0; color: var(--asphalt-soft); font-size: 17px; }
+.run-error { margin: 14px 0; color: var(--brick); font-weight: 700; }
+.refresh-button {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
+  border: 2px solid var(--asphalt);
+  border-radius: 50%;
+  align-items: center;
+  text-decoration: none;
+}
+
+.refresh-icon {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 /* City: the 3D scene fills the screen, with the status text floating above the rooftops. */
 
 .city-screen {
@@ -202,60 +448,71 @@ body {
   font-weight: 600;
 }
 
-/* Speech bubbles above the houses, in the same shape as the Ask screen's bubble. */
+/* Cards over the houses: what a character says, and the letters sent to it, in the Ask screen's bubble shape. */
 
-.bubble {
+.stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  /* Newest card at the bottom, just above the roof. */
+  transform: translate(-50%, -100%);
+}
+
+.house-card {
   position: relative;
   width: max-content;
   max-width: 190px;
   padding: 7px 12px 8px;
   background: var(--kerb);
-  border: 2.5px solid var(--asphalt);
+  border: 2.5px solid var(--edge);
   border-radius: 14px;
-  box-shadow: 0 3px 0 var(--asphalt);
+  box-shadow: 0 3px 0 var(--edge);
   color: var(--asphalt);
   font: 600 14px / 1.25 var(--font);
-  /* Sits above its anchor point on the roof, with the tail pointing down at it. */
-  transform: translate(-50%, calc(-100% - 12px));
-  transform-origin: 50% 100%;
-  animation: bubble-life 5s ease-out forwards;
+  animation: card-say 5s ease-out forwards;
+  --edge: var(--asphalt);
 }
 
-.bubble::after {
-  content: "";
-  position: absolute;
-  left: calc(50% - 7px);
-  bottom: -9px;
-  width: 12px;
-  height: 12px;
-  background: var(--kerb);
-  border-right: 2.5px solid var(--asphalt);
-  border-bottom: 2.5px solid var(--asphalt);
-  transform: rotate(45deg);
-}
-
-.bubble-speaker {
+.house-card .card-from {
   display: block;
   color: var(--asphalt-soft);
   font-size: 12px;
   font-weight: 700;
 }
 
+.house-card .card-stamp {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.letter-agree .card-stamp {
+  color: #3f8f55;
+}
+
+.letter-disagree .card-stamp {
+  color: var(--brick);
+}
+
+.letter-mixed .card-stamp {
+  color: #c98a12;
+}
+
 /* Last words get the darker treatment, since that character is about to go. */
-.bubble-last {
+.house-card-last {
   background: var(--asphalt);
   color: var(--kerb);
 }
 
-.bubble-last::after {
-  background: var(--asphalt);
-}
-
-.bubble-last .bubble-speaker {
+.house-card-last .card-from {
   color: var(--taxi);
 }
 
-@keyframes bubble-life {
+/* A character's own words just pop in. */
+@keyframes card-say {
   0% {
     opacity: 0;
     scale: 0.6;
@@ -272,6 +529,211 @@ body {
   }
   100% {
     opacity: 0;
+  }
+}
+
+/* A letter is one element for its whole life: an envelope that flies from the sender's roof,
+   opens its flap and unfolds into the card. Its size and distance to travel are set by the
+   script (--sx and --sy squash it to envelope size, --dx and --dy are where it starts from). */
+
+.letter {
+  position: relative;
+  width: max-content;
+  max-width: 190px;
+  padding: 7px 12px 8px;
+  color: var(--asphalt);
+  font: 600 14px / 1.25 var(--font);
+  visibility: hidden;
+  --edge: var(--asphalt);
+}
+
+/* A shared acceptance triggers this at both roofs in the same event render. */
+.agreement-badge {
+  position: absolute;
+  z-index: 2;
+  right: -24px;
+  bottom: 2px;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  background: #fdf0c6;
+  border: 2.5px solid #3f8f55;
+  border-radius: 50%;
+  box-shadow: 0 3px 0 #3f8f55;
+  animation: agreement-pop 4.8s ease-out both;
+}
+
+.agreement-badge svg {
+  width: 22px;
+  height: 22px;
+  fill: #3f8f55;
+}
+
+@keyframes agreement-pop {
+  0% { opacity: 0; scale: 0.35; translate: 0 18px; }
+  12% { opacity: 1; scale: 1.14; translate: 0 -6px; }
+  20%, 78% { opacity: 1; scale: 1; translate: 0 0; }
+  100% { opacity: 0; scale: 0.85; translate: 0 -14px; }
+}
+
+.letter-agree {
+  --edge: #3f8f55;
+}
+
+.letter-disagree {
+  --edge: var(--brick);
+}
+
+.letter-mixed {
+  --edge: #c98a12;
+}
+
+.letter-go {
+  visibility: visible;
+  animation:
+    letter-fly 1.1s linear both,
+    letter-tilt 1.1s ease-out both,
+    letter-life 7s linear both;
+}
+
+.letter-body,
+.letter-decor {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.letter-body {
+  filter: drop-shadow(0 3px 0 var(--edge));
+}
+
+.letter-body rect {
+  fill: var(--kerb);
+  stroke: var(--edge);
+  stroke-width: 2.5px;
+  vector-effect: non-scaling-stroke;
+}
+
+.letter-decor {
+  animation: letter-decor 7s linear both;
+}
+
+.letter-seam,
+.letter-flap {
+  stroke: var(--asphalt);
+  stroke-width: 2px;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.letter-seam {
+  fill: none;
+  opacity: 0.45;
+}
+
+.letter-flap {
+  fill: var(--taxi);
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  animation: letter-flap 7s ease-out both;
+}
+
+.letter-text {
+  position: relative;
+  animation: letter-text 7s linear both;
+}
+
+/* The flight is a hop along an arc, from where the sender's roof is on screen to the letter's place. */
+@keyframes letter-fly {
+  0% {
+    translate: var(--dx) var(--dy);
+  }
+  25% {
+    translate: calc(var(--dx) * 0.75) calc(var(--dy) * 0.75 - 52px);
+  }
+  50% {
+    translate: calc(var(--dx) * 0.5) calc(var(--dy) * 0.5 - 70px);
+  }
+  75% {
+    translate: calc(var(--dx) * 0.25) calc(var(--dy) * 0.25 - 52px);
+  }
+  100% {
+    translate: 0 0;
+  }
+}
+
+@keyframes letter-tilt {
+  0% {
+    rotate: -20deg;
+  }
+  60% {
+    rotate: 12deg;
+  }
+  100% {
+    rotate: 0deg;
+  }
+}
+
+/* Envelope until it lands (1.1s of the 7), then it spreads wide, drops open, holds and fades. */
+@keyframes letter-life {
+  0%,
+  19% {
+    scale: var(--sx) var(--sy);
+    opacity: 1;
+  }
+  27% {
+    scale: 1 var(--sy);
+  }
+  34% {
+    scale: 1.02 1.05;
+  }
+  37%,
+  91% {
+    scale: 1 1;
+    opacity: 1;
+  }
+  100% {
+    scale: 1 1;
+    opacity: 0;
+  }
+}
+
+/* The flap swings up off the envelope as it lands. */
+@keyframes letter-flap {
+  0%,
+  14% {
+    transform: scaleY(1);
+  }
+  19%,
+  100% {
+    transform: scaleY(-1);
+  }
+}
+
+/* The envelope's markings give way to the card. */
+@keyframes letter-decor {
+  0%,
+  24% {
+    opacity: 1;
+  }
+  32%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes letter-text {
+  0%,
+  30% {
+    opacity: 0;
+  }
+  38%,
+  100% {
+    opacity: 1;
   }
 }
 
@@ -457,12 +919,26 @@ body {
   cursor: pointer;
 }
 
+.home-tab {
+  padding: 6px 14px;
+  border: 0;
+  border-right: 2px solid rgb(63 69 76 / 0.2);
+  border-radius: 999px 0 0 999px;
+  background: transparent;
+  color: var(--asphalt);
+  font: 800 17px / 1.2 var(--font);
+  cursor: pointer;
+}
+
 .tab[aria-pressed="true"] {
   background: var(--taxi);
   color: var(--asphalt);
 }
 
-.tab:focus-visible {
+.tab:focus-visible,
+.home-tab:focus-visible,
+.view-run-button:focus-visible,
+.playback-slider:focus-visible {
   outline: 3px solid var(--asphalt);
   outline-offset: 1px;
 }
@@ -488,7 +964,7 @@ body {
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 8px 32px 32px;
+  padding: 20px 32px 32px; /* room for a proposal's badge and glow on the top row */
 }
 
 .tree-canvas {
@@ -514,13 +990,40 @@ body {
 
 .tree-node {
   position: absolute;
+  display: flex;
+  flex-direction: column;
   padding: 8px 12px;
   overflow: hidden;
   background: var(--kerb);
   border: 2px solid var(--asphalt);
   border-radius: 14px;
   box-shadow: 0 3px 0 var(--asphalt);
+  color: var(--asphalt);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    opacity 200ms ease,
+    filter 200ms ease;
   animation: node-in 300ms ease-out both;
+}
+
+.tree-node[aria-pressed="true"] {
+  outline: 4px solid var(--asphalt);
+  outline-offset: 3px;
+}
+
+/* Composted: its author withdrew it, often because nobody liked it, and nobody backs it. */
+.tree-node[data-composted] {
+  border-style: dashed;
+  box-shadow: none;
+  opacity: 0.45;
+  filter: grayscale(1);
+}
+
+/* Outside the highlighted theme. */
+.tree-node[data-dim="true"] {
+  opacity: 0.28;
 }
 
 @keyframes node-in {
@@ -541,6 +1044,43 @@ body {
 
 .tree-node[data-support="3"] {
   background: var(--taxi);
+}
+
+/* Backed by enough characters besides its authors to be a real contender. */
+.tree-node[data-proposal] {
+  overflow: visible;
+  box-shadow:
+    0 3px 0 var(--asphalt),
+    0 0 0 4px var(--taxi),
+    0 0 26px 8px rgb(246 195 67 / 0.7);
+  animation:
+    node-in 300ms ease-out both,
+    proposal-glow 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes proposal-glow {
+  to {
+    box-shadow:
+      0 3px 0 var(--asphalt),
+      0 0 0 4px var(--taxi),
+      0 0 12px 2px rgb(246 195 67 / 0.45);
+  }
+}
+
+.tree-node-badge {
+  position: absolute;
+  top: -13px;
+  right: 12px;
+  padding: 0 9px;
+  background: var(--taxi);
+  border: 2px solid var(--asphalt);
+  border-radius: 999px;
+  color: var(--asphalt);
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 20px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .tree-node-meta {
@@ -566,14 +1106,880 @@ body {
 }
 
 .tree-node-text {
-  display: -webkit-box;
-  margin: 0;
-  overflow: hidden;
+  display: block;
+  flex: 1;
+  margin: 0 -4px 0 0;
+  padding-right: 4px;
+  overflow: auto;
   font-size: 14px;
   font-weight: 600;
   line-height: 1.3;
+  scrollbar-width: thin;
+  scrollbar-color: var(--asphalt-soft) transparent;
+}
+
+.tree-node:focus-visible {
+  outline: 4px solid var(--taxi);
+  outline-offset: 4px;
+}
+
+/* A saved town can be replayed one event at a time without leaving the scene. */
+.playback-bar {
+  position: absolute;
+  z-index: 50;
+  right: 0;
+  bottom: clamp(140px, 22vh, 280px);
+  left: 16px;
+  width: min(520px, calc(100% - 32px));
+  margin: 0 auto;
+}
+
+.playback-track {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.playback-button {
+  display: grid;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  place-items: center;
+  border: 3px solid var(--asphalt);
+  border-radius: 50%;
+  background: var(--taxi);
+  color: var(--asphalt);
+  box-shadow: 0 4px 0 var(--asphalt);
+  cursor: pointer;
+}
+
+.playback-button svg {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.playback-button:active {
+  translate: 0 3px;
+  box-shadow: 0 1px 0 var(--asphalt);
+}
+
+.playback-button:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.playback-button:focus-visible {
+  outline: 4px solid var(--kerb);
+  outline-offset: 3px;
+}
+
+.playback-slider {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  height: 10px;
+  margin: 0;
+  border: 3px solid var(--asphalt);
+  border-radius: 999px;
+  appearance: none;
+  box-shadow: 0 3px 0 var(--asphalt);
+  cursor: pointer;
+}
+
+.playback-slider::-webkit-slider-thumb {
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--asphalt);
+  border-radius: 50%;
+  background: var(--taxi);
+  appearance: none;
+  box-shadow: 0 3px 0 var(--asphalt);
+}
+
+.playback-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border: 3px solid var(--asphalt);
+  border-radius: 50%;
+  background: var(--taxi);
+  box-shadow: 0 3px 0 var(--asphalt);
+}
+
+/* Ticker: the latest town news, in the subtitle line under the idea. */
+
+.ticker {
+  display: inline-flex;
+  max-width: min(760px, 100%);
+  margin: 10px auto 0;
+  padding: 6px 18px 6px 12px;
+  overflow: hidden;
+  background: var(--kerb);
+  border: var(--outline);
+  border-radius: 999px;
+  box-shadow: 0 4px 0 var(--asphalt);
+  color: var(--asphalt);
+  font: 600 17px / 1.3 var(--font);
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.ticker:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 var(--asphalt);
+}
+
+.ticker:focus-visible {
+  outline: 4px solid var(--taxi);
+  outline-offset: 3px;
+}
+
+.ticker-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  animation: ticker-in 320ms cubic-bezier(0.2, 0.9, 0.3, 1.25) both;
+}
+
+.ticker .feed-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@keyframes ticker-in {
+  from {
+    opacity: 0;
+    transform: translateY(70%);
+  }
+}
+
+.feed-icon {
+  flex: none;
+  font-size: 1.1em;
+  line-height: 1.2;
+}
+
+.feed-text strong {
+  font-weight: 800;
+}
+
+.feed-text q {
+  margin-left: 0.35em;
+  color: var(--asphalt-soft);
+  quotes: "“" "”";
+}
+
+/* Side panel: a floating card down the right side, over the city, which stays put underneath. */
+
+.side-panel {
+  position: absolute;
+  z-index: 60;
+  top: 10px;
+  right: 10px;
+  bottom: 10px;
+  display: flex;
+  flex-direction: column;
+  width: max(340px, calc(30% - 10px));
+  max-width: calc(100% - 20px);
+  overflow: hidden;
+  background: var(--kerb);
+  border: var(--outline);
+  border-radius: 24px;
+  box-shadow: 0 6px 0 var(--asphalt);
+  animation: side-panel-in 220ms cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+@keyframes side-panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+}
+
+.side-panel-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 22px 22px 28px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--asphalt-soft) transparent;
+}
+
+.side-panel-close {
+  position: absolute;
+  z-index: 1;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 2px solid var(--asphalt);
+  border-radius: 50%;
+  background: var(--kerb);
+  color: var(--asphalt);
+  font: 800 24px / 1 var(--font);
+  cursor: pointer;
+}
+
+.side-panel-close:active {
+  transform: translateY(2px);
+}
+
+.side-panel-close:focus-visible,
+.name-button:focus-visible,
+.branch-link:focus-visible,
+.news-row:focus-visible,
+.chip-button:focus-visible,
+.bucket-ideas button:focus-visible {
+  outline: 3px solid var(--taxi);
+  outline-offset: 2px;
+}
+
+.panel-eyebrow {
+  margin: 0;
+  padding-right: 48px;
+  color: var(--asphalt-soft);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.panel-eyebrow .name-button {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.panel-header h2 {
+  margin: 2px 48px 0 0;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.panel-line {
+  margin: 6px 0 0;
+  color: var(--asphalt-soft);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.panel-idea {
+  margin: 8px 0 0;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.panel-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.chip {
+  padding: 3px 10px;
+  border: 2px solid var(--asphalt);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--asphalt);
+  font: 700 13px / 1.3 var(--font);
+}
+
+.chip-taxi {
+  background: var(--taxi);
+}
+
+.chip-dark {
+  background: var(--asphalt);
+  color: var(--kerb);
+}
+
+.chip-button {
+  cursor: pointer;
+}
+
+.panel-quote {
+  margin: 16px 0 0;
+  padding-left: 12px;
+  border-left: 4px solid var(--taxi);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.panel-quote-dark {
+  margin: 0;
+  border-color: var(--brick);
+}
+
+.panel-section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 2px solid rgb(63 69 76 / 0.14);
+}
+
+.panel-section h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.panel-empty {
+  margin: 0;
+  color: var(--asphalt-soft);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.panel-agenda {
+  margin: 0 0 8px;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.panel-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.panel-bullets {
+  gap: 4px;
+  padding-left: 18px;
+  list-style: disc;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.panel-row {
+  padding: 9px 12px;
+  background: rgb(63 69 76 / 0.07);
+  border-radius: 14px;
+}
+
+.panel-row-label {
+  display: block;
+  color: var(--asphalt-soft);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.panel-row-say {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.panel-row-note {
+  margin: 3px 0 0;
+  color: var(--asphalt-soft);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.name-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--asphalt);
+  font: inherit;
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.branch-link {
+  display: block;
+  width: 100%;
+  padding: 10px 12px;
+  background: #fff;
+  border: 2px solid var(--asphalt);
+  border-radius: 14px;
+  box-shadow: 0 3px 0 var(--asphalt);
+  color: var(--asphalt);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.branch-link:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--asphalt);
+}
+
+.branch-link-op {
+  display: block;
+  color: var(--asphalt-soft);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.branch-link-text {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.branch-link-note {
+  display: block;
+  margin-top: 4px;
+  color: var(--asphalt-soft);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.news-list {
+  gap: 2px;
+  margin-top: 14px;
+}
+
+.news-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--asphalt);
+  font: 600 15px / 1.35 var(--font);
+  text-align: left;
+}
+
+button.news-row {
+  cursor: pointer;
+}
+
+button.news-row:hover {
+  background: rgb(63 69 76 / 0.07);
+}
+
+.news-row .feed-text q {
+  display: block;
+  margin: 2px 0 0;
+}
+
+/* Results: what the run came to, over the city like the tree. */
+
+/* The scroll starts under the wordmark and tabs, so nothing slides beneath them. */
+.results-view {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  padding-top: 68px;
+  background: var(--sky);
+}
+
+.results-scroll {
+  height: 100%;
+  overflow-y: auto;
+  padding: 24px 24px 56px;
+}
+
+.results-scroll > * {
+  max-width: 1080px;
+  margin-inline: auto;
+}
+
+.results-header {
+  margin-bottom: 40px;
+  text-align: center;
+}
+
+.results-eyebrow {
+  margin: 0 0 4px;
+  color: var(--asphalt-soft);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.results-headline {
+  max-width: 760px;
+  margin: 18px auto 0;
+  padding: 14px 24px;
+  background: var(--kerb);
+  border: var(--outline);
+  border-radius: 24px;
+  box-shadow: var(--lift);
+  font-size: clamp(18px, 2.2vw, 24px);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.summary-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 12px 0 0;
+  color: var(--asphalt-soft);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.summary-status .text-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.podium {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  align-items: start;
+  gap: 28px 18px;
+  margin-bottom: 40px;
+  padding: 0;
+  list-style: none;
+}
+
+.verdict {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 28px 20px 16px;
+  background: var(--kerb);
+  border: var(--outline);
+  border-radius: 22px;
+  box-shadow: var(--lift);
+}
+
+.verdict-1 {
+  background: var(--taxi);
+}
+
+.verdict-rank {
+  position: absolute;
+  top: -20px;
+  left: 18px;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  background: var(--kerb);
+  border: var(--outline);
+  border-radius: 50%;
+  box-shadow: 0 3px 0 var(--asphalt);
+  font-size: 21px;
+  font-weight: 800;
+}
+
+.verdict-1 .verdict-rank {
+  background: var(--asphalt);
+  color: var(--taxi);
+}
+
+.verdict-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.verdict-idea,
+.verdict-why,
+.verdict-quote,
+.verdict-risk {
+  margin: 0;
+  line-height: 1.35;
+}
+
+.verdict-idea {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.verdict-why {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.verdict-quote {
+  padding-left: 10px;
+  border-left: 3px solid var(--asphalt);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.verdict-risk {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.verdict-risk strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.verdict-risk strong::before {
+  content: "⚠️ ";
+}
+
+.verdict-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 4px;
+  padding-top: 10px;
+  border-top: 2px solid rgb(63 69 76 / 0.18);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.verdict-footer .text-button {
+  flex: none;
+  font-size: 15px;
+}
+
+.results-section {
+  margin-bottom: 40px;
+}
+
+.results-section h2 {
+  margin: 0 0 14px;
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.buckets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bucket,
+.results-card,
+.versus-side {
+  background: var(--kerb);
+  border: var(--outline);
+  border-radius: 20px;
+  box-shadow: 0 4px 0 var(--asphalt);
+}
+
+.bucket {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px;
+}
+
+.bucket-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.bucket-emoji {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.bucket-head h3 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+
+.bucket-head p {
+  margin: 2px 0 0;
+  color: var(--asphalt-soft);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.bucket-count {
+  flex: none;
+  min-width: 32px;
+  margin-left: auto;
+  padding: 2px 8px;
+  background: var(--taxi);
+  border: 2px solid var(--asphalt);
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.bucket-ideas {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bucket-ideas button {
+  display: block;
+  width: 100%;
+  padding: 6px 9px;
+  border: 0;
+  border-radius: 10px;
+  background: rgb(63 69 76 / 0.07);
+  color: var(--asphalt);
+  font: 600 13px / 1.3 var(--font);
+  text-align: left;
+  cursor: pointer;
+}
+
+.bucket-ideas button span {
+  display: -webkit-box;
+  overflow: hidden;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
+}
+
+.bucket-ideas button:hover {
+  background: rgb(63 69 76 / 0.13);
+}
+
+.bucket > .text-button {
+  align-self: flex-start;
+  font-size: 15px;
+}
+
+.results-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 18px;
+  margin-bottom: 40px;
+}
+
+.results-card {
+  margin: 0;
+  padding: 18px 20px;
+}
+
+.results-card h2 {
+  font-size: 22px;
+}
+
+.moments {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 22px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.stats div {
+  display: flex;
+  flex-direction: column-reverse;
+  padding: 10px 6px;
+  background: rgb(63 69 76 / 0.07);
+  border-radius: 14px;
+  text-align: center;
+}
+
+.stats dd {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.stats dt {
+  margin-top: 4px;
+  color: var(--asphalt-soft);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.versus {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.versus-side {
+  padding: 18px 20px;
+}
+
+.versus-town {
+  background: var(--taxi);
+}
+
+.versus-side h3 {
+  margin: 0 0 10px;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.versus-side ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 20px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.results-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.copy-button {
+  font-size: 20px;
+}
+
+@media (max-width: 560px) {
+  .ticker {
+    font-size: 15px;
+  }
+
+  /* No room down the side, so it comes up from the bottom instead. */
+  .side-panel {
+    top: 30vh;
+    left: 10px;
+    width: auto;
+  }
+
+  .results-scroll {
+    padding-inline: 16px;
+  }
 }
 
 @media (max-width: 560px) {
@@ -589,6 +1995,14 @@ body {
     transform: none;
   }
 
+  .home-tab {
+    padding-inline: 10px;
+  }
+
+  .tab {
+    padding-inline: 14px;
+  }
+
   .ask-bubble {
     flex-wrap: wrap;
     padding: 14px 16px 24px;
@@ -599,9 +2013,33 @@ body {
   }
 
   .ask-hint,
-  .ask-error {
+  .ask-error,
+  .ask-feedback {
     margin-left: 4px;
   }
+
+  .run-inspector {
+    height: min(48dvh, 280px);
+  }
+
+  .run-row {
+    padding-inline: 9px;
+  }
+
+  .run-row-copy span {
+    font-size: 12px;
+  }
+
+  .run-actions {
+    gap: 5px;
+  }
+
+  .view-run-button,
+  .stop-button {
+    padding-inline: 8px;
+    font-size: 12px;
+  }
+
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -614,16 +2052,46 @@ body {
     animation: none;
   }
 
-  .bubble {
-    animation-name: bubble-fade;
+  .run-row {
+    animation: none;
   }
 
-  .tree-node {
+  .house-card {
+    animation-name: letter-fade;
+  }
+
+  .letter-go {
+    animation: letter-fade 7s linear both;
+  }
+
+  .agreement-badge {
     animation: none;
+  }
+
+  .letter-decor {
+    display: none;
+  }
+
+  .letter-text {
+    animation: none;
+  }
+
+  .tree-node,
+  .tree-node[data-proposal] {
+    animation: none;
+  }
+
+  .ticker-item,
+  .side-panel {
+    animation: none;
+  }
+
+  .playback-button:active {
+    translate: none;
   }
 }
 
-@keyframes bubble-fade {
+@keyframes letter-fade {
   0%,
   85% {
     opacity: 1;
@@ -631,4 +2099,16 @@ body {
   100% {
     opacity: 0;
   }
+}
+
+/* The resident's name, shown while hovering their house. */
+.house-name {
+  transform: translate(-50%, -50%);
+  width: max-content;
+  padding: 3px 10px 4px;
+  background: var(--asphalt);
+  border-radius: 10px;
+  color: var(--kerb);
+  font: 700 13px / 1.2 var(--font);
+  white-space: nowrap;
 }
