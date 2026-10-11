@@ -1,0 +1,218 @@
+/* Colors come from the KayKit City Builder Bits texture, so the screens and the city share one palette. */
+:root {
+  --sky: #8fcfea;
+  --asphalt: #3f454c;
+  --kerb: #f4f6f7;
+  --taxi: #f6c343;
+  --brick: #c8423a;
+  --asphalt-soft: rgb(63 69 76 / 0.72);
+
+  --font: "Baloo 2", ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif;
+  --outline: 3px solid var(--asphalt);
+  --lift: 0 6px 0 var(--asphalt);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--sky);
+  color: var(--asphalt);
+  font-family: var(--font);
+  font-weight: 500;
+  -webkit-font-smoothing: antialiased;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.app {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.wordmark {
+  position: relative;
+  z-index: 2;
+  padding: 20px 28px;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* Ask: the idea goes in a speech bubble, the same shape the characters will talk in. */
+
+.ask {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: min(760px, 100% - 32px);
+  margin: 0 auto;
+  padding-bottom: 12vh;
+}
+
+.ask-bubble {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px 14px 28px;
+  background: var(--kerb);
+  border: var(--outline);
+  border-radius: 28px;
+  box-shadow: var(--lift);
+}
+
+/* The tail, outlined like the bubble. */
+.ask-bubble::after {
+  content: "";
+  position: absolute;
+  left: 56px;
+  bottom: -15px;
+  width: 26px;
+  height: 26px;
+  background: var(--kerb);
+  border-right: var(--outline);
+  border-bottom: var(--outline);
+  transform: skewX(28deg) rotate(45deg);
+}
+
+.ask-bubble:focus-within {
+  outline: 4px solid var(--taxi);
+  outline-offset: 5px;
+}
+
+.ask-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 0;
+  border: 0;
+  background: transparent;
+  color: var(--asphalt);
+  font: 600 clamp(22px, 3.2vw, 32px) / 1.25 var(--font);
+  outline: none;
+}
+
+.ask-input::placeholder {
+  color: var(--asphalt-soft);
+}
+
+.ask-button {
+  flex: none;
+  padding: 12px 22px;
+  border: var(--outline);
+  border-radius: 18px;
+  background: var(--taxi);
+  color: var(--asphalt);
+  font: 700 20px / 1 var(--font);
+  box-shadow: 0 4px 0 var(--asphalt);
+  cursor: pointer;
+}
+
+.ask-button:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 var(--asphalt);
+}
+
+.ask-button:focus-visible {
+  outline: 4px solid var(--asphalt);
+  outline-offset: 3px;
+}
+
+.ask-button:disabled {
+  cursor: default;
+  background: var(--kerb);
+  color: var(--asphalt-soft);
+  border-color: var(--asphalt-soft);
+  box-shadow: 0 4px 0 var(--asphalt-soft);
+}
+
+.ask-hint,
+.ask-error {
+  margin: 36px 0 0 28px;
+  max-width: 52ch;
+  font-size: 18px;
+  line-height: 1.45;
+}
+
+.ask-hint {
+  color: var(--asphalt-soft);
+}
+
+.ask-error {
+  color: var(--brick);
+  font-weight: 600;
+}
+
+/* City: the 3D scene fills the screen, with the status text floating above the rooftops. */
+
+.city-screen {
+  position: fixed;
+  inset: 0;
+}
+
+.city-overlay {
+  position: absolute;
+  top: 72px;
+  left: 0;
+  right: 0;
+  padding: 0 16px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.city-title {
+  margin: 0;
+  font-size: clamp(30px, 4.5vw, 46px);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.city-subtitle {
+  margin: 6px 0 0;
+  color: var(--asphalt-soft);
+  font-size: 19px;
+  font-weight: 600;
+}
+
+@media (max-width: 560px) {
+  .wordmark {
+    padding: 16px;
+  }
+
+  .ask-bubble {
+    flex-wrap: wrap;
+    padding: 14px 16px 24px;
+  }
+
+  .ask-button {
+    width: 100%;
+  }
+
+  .ask-hint,
+  .ask-error {
+    margin-left: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ask-button:active:not(:disabled) {
+    transform: none;
+  }
+}

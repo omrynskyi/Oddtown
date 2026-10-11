@@ -1,7 +1,17 @@
 KayKit_City_Builder_Bits_1.0_FREE.zip
+KayKit_City_Builder_Bits_1.0_FREE/
 .DS_Store
+
+# Python
 .env
 .venv/
-.oddtown/
 __pycache__/
 .pytest_cache/
+
+# Runs and observer data
+.oddtown/
+observer.db*
+
+# UI
+node_modules/
+ui/dist/
