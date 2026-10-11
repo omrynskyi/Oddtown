@@ -223,7 +223,8 @@ class World:
     async def _start_ideation(self, run: Run) -> dict:
         settings = run.request.loop
         rng_seed = settings.random_seed if settings.random_seed is not None else uuid.uuid4().int % 2**32
-        run.ideation = IdeationLoop(self, run, settings, run.cast_ids, run.request.seed, rng_seed)
+        cast_pool = json.loads(IDEATION_CAST.read_text())
+        run.ideation = IdeationLoop(self, run, settings, run.cast_ids, run.request.seed, rng_seed, spare_personas=cast_pool)
         await self.emit("run.started", {
             "quorum": None, "mode": IDEATION_MODE, "loop": {**settings.model_dump(), "random_seed": rng_seed},
         })
@@ -280,6 +281,7 @@ class World:
                 run.result = {
                     "reason": reason, "living": sorted(living), "mode": IDEATION_MODE, "ties": [],
                     "finalists": run.ideation.finalists(), "rounds": run.ideation.history,
+                    "replacements": run.ideation.replacements,
                 }
                 tally = {"ties": []}
                 if not failed:
@@ -352,6 +354,8 @@ class World:
     async def _spawn(self, sender: str, body: dict) -> None:
         persona = body.get("persona") or {}
         try:
+            if self.run.ideation and not self.run.ideation.accepts_spawn(persona):
+                raise ValueError("that replacement was already filled")
             agent_id = await self.run.launcher.start(persona)
             self.spawn(self._announce_birth(self.run, persona, sender))
             reply = {"type": "spawn.result", "body": {"ok": True, "agent_id": agent_id}}
@@ -361,6 +365,9 @@ class World:
             await self.town.send(sender, reply)
         except DeadPeerError:
             pass  # the designer died after asking, the newcomer still gets born
+
+    async def announce_birth(self, run: Run, persona: dict, requested_by: str) -> None:
+        await self._announce_birth(run, persona, requested_by)
 
     async def _announce_birth(self, run: Run, persona: dict, requested_by: str) -> None:
         """Emit agent.born once the newcomer has actually joined the town."""
@@ -430,6 +437,8 @@ class World:
             "ballots": len(r.ballots) if r else 0,
             "selected": loop.selected,
             "rounds_done": len(loop.history),
+            "participants": loop.participants,
+            "replacements": loop.replacements,
         }
 
 

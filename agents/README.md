@@ -13,7 +13,8 @@ Everything inside a character's head. Owned by Anthony.
 | `schema.py` | Persona and branch schemas, and the schema check |
 | `messages.py` | Message types and body shapes |
 | `config.py` | The plan's starting parameters, each overridable from the environment |
-| `ideation.py` | The agent for the ideation voting loop (`ODDTOWN_MODE=ideation_loop`): writes, twists and votes. See `PLATFORM.md` |
+| `ideation.py` | The agent for the ideation voting loop (`ODDTOWN_MODE=ideation_loop`): writes, twists, votes, retires between rounds and designs replacements. See `PLATFORM.md` |
+| `design.py` | Designing a replacement (pick, propose, refine, refine, birth), shared by the town's `Character` and the ideation agent. `ODDTOWN_MOCK_REJECT_PERSONAS=1` makes the mock content check reject everyone, for tests |
 | `baseline.py` | One LLM's three ideas for the same seed |
 | `../personas/starting_cast.json` | The six starting characters. `extended_cast.json` adds six more, for twelve |
 

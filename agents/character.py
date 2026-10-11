@@ -42,6 +42,7 @@ from pydantic import ValidationError
 
 from agents import brain, config, llm, replace
 from agents.brain import Decision, Reply, View, clip
+from agents.design import DesignChain
 from agents.llm import LLMError
 from agents.memory import MemoryStream
 from agents.social import Ledger, quote
@@ -119,9 +120,11 @@ class Character:
 
         self.inbox: list[dict] = []  # waking messages the next decision call answers
         self.built_this_turn: list[dict] = []  # branches this turn's replies made
-        self.designs: deque[dict] = deque()  # replacement work, done before the next decision
-        self.drafts_seen: set[str] = set()  # replacements whose draft reached us
-        self.pending_reviews: list[dict] = []  # newcomers waiting on a human after a failed content check
+        # Designing replacements lives in agents/design.py, shared with the ideation loop.
+        self.chain = DesignChain(self)
+        self.designs = self.chain.designs  # replacement work, done before the next decision
+        self.drafts_seen = self.chain.drafts_seen  # replacements whose draft reached us
+        self.pending_reviews = self.chain.pending_reviews  # newcomers waiting on a human after a failed content check
         self.news = False  # a world event arrived since the last turn
         self.wake = asyncio.Event()
         self.done = asyncio.Event()
@@ -954,179 +957,44 @@ class Character:
         while self.designs:
             await self.design(self.designs.popleft())
 
+    # -- designing a replacement: agents/design.py does the work ----------
+
     async def pick_designers(self, exclude: set[str], include_me: bool, peers: list[dict] | None = None) -> list[str]:
-        """Three random survivors. The first proposes, the next two refine, in that order."""
-        peers = peers if peers is not None else await self.living_peers()
-        candidates = [p["id"] for p in peers if p["id"] not in exclude and p["id"] not in self.dead]
-        if include_me and self.alive:
-            candidates.append(self.id)
-        return self.rng.sample(candidates, min(3, len(candidates)))
+        return await self.chain.pick_designers(exclude, include_me, peers)
 
     async def request_replacement(self, replaces: str, replaces_name: str, order: list[str], generation: int) -> None:
-        briefing = self.briefing()
-        for i, designer in enumerate(order):
-            body = {
-                "replaces": replaces, "replaces_name": replaces_name, "role": "propose" if i == 0 else "refine",
-                "order": order, "generation": generation, "briefing": briefing,
-            }
-            if designer == self.id:
-                self.designs.append({"type": REPLACE_REQUEST, "from": self.id, "body": body})
-                self.wake.set()
-            else:
-                await self.send(designer, REPLACE_REQUEST, body)
-
-    # -- designing a replacement ------------------------------------------
+        await self.chain.request_replacement(replaces, replaces_name, order, generation)
 
     async def design(self, env: dict) -> None:
-        body = env.get("body") or {}
-        kind = env.get("type")
-        try:
-            if kind == REPLACE_REQUEST and body.get("role") == "propose":
-                await self.propose(body, next_step=1)
-            elif kind == REPLACE_REQUEST:
-                self.memory.add(f"You were picked to help design {body.get('replaces_name')}'s replacement", "replacement")
-                self.spawn(self.design_watchdog(body))
-            elif kind == PERSONA_DRAFT:
-                await self.refine(body)
-            elif kind == "takeover":
-                await self.propose(body, next_step=body["order"].index(self.id) + 1)
-        except LLMError:
-            pass  # the next designer in line, or the watchdog, carries on
+        await self.chain.design(env)
 
-    async def design_town(self, exclude: str | None = None) -> list[dict]:
-        peers = await self.living_peers()
-        return [p for p in peers if p["id"] != exclude] + [self.persona]
+    async def spawn_newcomer(self, persona: dict) -> None:
+        await self.chain.spawn_newcomer(persona)
 
-    def newcomer_model(self) -> str:
-        return config.model_override() or self.rng.choice(config.allowed_models())
+    def on_human_answer(self, text: str) -> None:
+        self.chain.on_human_answer(text)
 
-    async def propose(self, body: dict, next_step: int) -> None:
-        town = await self.design_town()
-        taken = target = None
-        if config.on("design"):
-            taken = sorted({p.get("name") for p in [*self.known.values(), self.persona] if p.get("name")})
-            target = replace.empty_corner(town, self.rng)
-        if config.on("design"):
-            result = await self.think(
-                "propose",
-                replace.propose_prompt(self.persona, town, body["replaces_name"], body.get("briefing") or {}, taken, target),
-                replace.Proposal,
-                lambda: replace.Proposal(concepts=["a", "b", "c"], names=[], draft=replace.mock_propose(town, self.rng)),
-            )
-            draft = result.value.draft
-            body = {**body, "names": [n for n in result.value.names if n][:5]}
-            draft.name = replace.free_name(draft.name, body["names"], taken)
-        else:
-            result = await self.think(
-                "propose",
-                replace.propose_prompt(self.persona, town, body["replaces_name"], body.get("briefing") or {}),
-                replace.PersonaDraft,
-                lambda: replace.mock_propose(town, self.rng),
-            )
-            draft = result.value
-        persona = replace.to_persona(
-            draft, model=self.newcomer_model(), replaces=body["replaces"], designers=body["order"], generation=body["generation"],
-        )
+    # The chain's hooks into this character.
+
+    def remember(self, text: str, kind: str) -> None:
+        self.memory.add(text, kind)
+
+    def spend_design_step(self) -> None:
         self.life_left -= 1
-        self.drafts_seen.add(body["replaces"])
-        self.memory.add(f"You proposed {persona['name']} ({persona['one_liner']}) to replace {body['replaces_name']}", "replacement")
-        self.emit("replace.step", {"step": "propose", "replaces": body["replaces"], "persona": persona})
-        await self.forward_draft(persona, body, next_step, [f"{self.name} proposed {persona['name']}"])
 
-    async def refine(self, body: dict) -> None:
-        draft = body["draft"]
-        town = await self.design_town(exclude=draft.get("id"))
-        feedback = None
-        if config.on("design"):
-            people = [p for p in [*self.known.values(), self.persona] if p.get("id") != draft.get("id")]
-            feedback = replace.gaps_feedback(draft, people, sorted({p.get("name") for p in people if p.get("name")}))
-        result = await self.think(
-            "refine",
-            replace.refine_prompt(self.persona, draft, town, body["replaces_name"], body.get("changes") or [], feedback),
-            replace.Refined,
-            lambda: replace.mock_refine(draft, town, self.rng),
-        )
-        persona = replace.to_persona(
-            result.value.draft, model=draft.get("model") or self.newcomer_model(), replaces=body["replaces"],
-            designers=body["order"], generation=body["generation"], persona_id=draft.get("id"),
-        )
-        self.life_left -= 1
-        change = f"{self.name}: {clip(result.value.change, 150)}"
-        self.memory.add(f"You refined {persona['name']}, the replacement for {body['replaces_name']}: {clip(result.value.change, 100)}", "replacement")
-        self.emit("replace.step", {"step": "refine", "replaces": body["replaces"], "persona": persona, "change": change})
-        await self.forward_draft(persona, body, body.get("step", 0) + 1, (body.get("changes") or []) + [change])
-
-    async def forward_draft(self, persona: dict, body: dict, step: int, changes: list[str]) -> None:
-        """Hand the draft to the next living designer, or birth it if nobody is left."""
-        order = body["order"]
-        for i in range(step, len(order)):
-            if order[i] == self.id:
-                continue
-            payload = {
-                "replaces": body["replaces"], "replaces_name": body["replaces_name"], "order": order, "step": i,
-                "generation": body["generation"], "draft": persona, "changes": changes, "briefing": body.get("briefing") or {},
-                "names": body.get("names") or [],
-            }
-            if await self.send(order[i], PERSONA_DRAFT, payload):
-                return
-        await self.birth(persona, body)
-
-    async def design_watchdog(self, body: dict) -> None:
-        """If every designer before us dies before a draft arrives, we take over the proposal."""
-        await asyncio.sleep(config.scaled(config.DESIGN_TIMEOUT_S))
-        if body["replaces"] in self.drafts_seen or not self.alive:
-            return
-        order = body["order"]
-        mine = order.index(self.id) if self.id in order else -1
-        living = {p["id"] for p in await self.living_peers()}
-        if mine <= 0 or any(d in living for d in order[:mine]):
-            return
-        self.designs.append({"type": "takeover", "from": self.id, "body": body})
+    def enqueue_design(self, env: dict) -> None:
+        self.designs.append(env)
         self.wake.set()
 
-    async def birth(self, persona: dict, body: dict) -> None:
-        if config.on("design"):
-            # Refiners may have renamed it into a clash. The proposer's other names are the way out.
-            taken = sorted({p.get("name") for p in self.known.values() if p.get("name") and p.get("id") != persona.get("id")} | {self.name})
-            persona = {**persona, "name": replace.free_name(persona["name"], body.get("names") or [], taken)}
-        try:
-            validate_persona(persona)
-        except ValidationError as exc:
-            log.warning("replacement for %s failed the schema check: %s", body["replaces"], exc)
-            self.emit("replace.failed", {"replaces": body["replaces"], "error": str(exc)[:500]})
-            return
-        try:
-            check = (await self.think(
-                "content_check", replace.content_check_prompt(persona), replace.ContentCheck,
-                lambda: replace.ContentCheck(ok=True, reason="mock check"),
-            )).value
-            ok, reason = check.ok, check.reason
-        except LLMError:
-            ok, reason = False, "the content check failed to run"
+    async def on_design_failed(self, persona: dict, body: dict, check: str, reason: str) -> None:
+        if check != "content":
+            return  # a schema failure is just logged, and the replacement is skipped
         world = await self.world_id()
         if not world:
             return
-        if not ok:
-            # A human approves or skips it. The answer comes back as a world.event human.answer.
-            self.pending_reviews.append({"persona": persona, "replaces": body["replaces"]})
-            await self.send(world, HUMAN_REQUEST, {"kind": "persona_review", "persona": persona, "flagged": clip(reason, 300)}, observe=False)
-            return
-        await self.spawn_newcomer(persona)
-
-    async def spawn_newcomer(self, persona: dict) -> None:
-        world = await self.world_id()
-        if world and await self.send(world, SPAWN_REQUEST, {"persona": {**persona, "briefing": self.briefing()}}, observe=False):
-            self.memory.add(f"You brought {persona['name']} to life", "replacement")
-            self.emit("replace.step", {"step": "birth", "replaces": persona["lineage"]["replaces"], "persona": persona})
-
-    def on_human_answer(self, text: str) -> None:
-        """We never learn the request_id the world assigned to our request, so the oldest review takes the answer."""
-        if not self.pending_reviews:
-            return
-        review = self.pending_reviews.pop(0)
-        if text.strip().lower().startswith(("approve", "yes", "ok", "allow")):
-            self.spawn(self.spawn_newcomer(review["persona"]))
-
+        # A human approves or skips it. The answer comes back as a world.event human.answer.
+        self.pending_reviews.append({"persona": persona, "replaces": body["replaces"]})
+        await self.send(world, HUMAN_REQUEST, {"kind": "persona_review", "persona": persona, "flagged": clip(reason, 300)}, observe=False)
 
 async def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")

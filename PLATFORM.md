@@ -103,7 +103,9 @@ curl -X POST localhost:8200/runs -H 'content-type: application/json' \
 | `rounds` | 3 to 10, counting round 1 | 3 |
 | `top_n` | 3 to 6, the ideas that survive each round | 3 |
 | `phase_timeout_s` | How long a phase waits for slow agents | 180 |
-| `random_seed` | Seeds the random fill so a run can be replayed | drawn per run |
+| `random_seed` | Seeds the random fill and who retires, so a run can be replayed | drawn per run |
+| `replace_each_round` | One agent dies and is replaced between rounds | `true` |
+| `replace_timeout_s` | How long the next round waits for a designed newcomer before falling back | 240 |
 
 How a run goes, with A agents and N survivors:
 
@@ -112,7 +114,12 @@ How a run goes, with A agents and N survivors:
 3. **Each round's top N:** whole vote levels go in while they fit, and the rest are drawn at random from the level that doesn't fit, ideas with 0 votes included.
 4. **The answer:** the last round's N survivors become `run.ended`'s finalists.
 
-Nobody dies in this mode, so the agent count stays fixed. The world service runs the clock and counts votes (`world/ideation.py`). The agents write, twist and vote (`agents/ideation.py`), each through its own persona and model.
+**Deaths and replacements, between rounds only.** After every round but the last, one agent dies and a replacement joins before the next round starts, so there are always A agents and nobody dies mid-round.
+- **Who dies:** if an agent crashed during the round, that crash is the round's death. Otherwise the world draws one agent at random (seeded) and sends it `ideation.retire`.
+- **The replacement:** the same mechanics as the town, shared through `agents/design.py`. The dying agent says its last words and picks 3 random survivors (for a crash, a random survivor picks). One proposes, two refine, and the last one runs the checks and asks the world to start the newcomer, with a briefing on the seed, constraints and current survivors.
+- **If the design fails:** a persona that fails the content check gets one more refine to fix it. If it fails again, or nothing joins within `replace_timeout_s`, the world starts an unused persona from `extended_cast.json` instead. A late design for a filled slot is refused, so the loop never gains an extra agent.
+
+The world service runs the clock, counts votes and draws who retires (`world/ideation.py`). The agents write, twist, vote and design replacements (`agents/ideation.py`), each through its own persona and model.
 
 Events for the UI:
 - `run.started` and `run.created` carry `mode`, and `run.started` carries the `loop` settings.
@@ -120,4 +127,6 @@ Events for the UI:
 - `branch.created` fires for every idea, with `parent_ids` set to the idea it twisted (`br_seed` for an original), the last editor as the author, and its `round`.
 - `loop.vote` has `round`, `idea_id`, `reason` and `ballot_size`.
 - `loop.round_ended` has `tally`, `ballots`, `selected` (with each idea's `votes`), `random_fill` and `abstained`.
-- `GET /runs/{id}` includes an `ideation` block with the current round and phase.
+- `loop.retiring` has `round`, `agent_id` and `how` (`random` or `crash`). It's followed by the town's usual `agent.last_words`, `agent.died` (with `picked`), `replace.step` events and `agent.born`.
+- `loop.replaced` has `round`, `died`, `born`, `how` and `fallback` (`null`, `design failed` or `design timed out`).
+- `GET /runs/{id}` includes an `ideation` block with the current round, phase, participants and replacements.
