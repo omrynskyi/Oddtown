@@ -177,6 +177,7 @@ body {
 
 .city-overlay {
   position: absolute;
+  z-index: 20;
   top: 72px;
   left: 0;
   right: 0;
@@ -197,6 +198,79 @@ body {
   color: var(--asphalt-soft);
   font-size: 19px;
   font-weight: 600;
+}
+
+/* Speech bubbles above the houses, in the same shape as the Ask screen's bubble. */
+
+.bubble {
+  position: relative;
+  width: max-content;
+  max-width: 190px;
+  padding: 7px 12px 8px;
+  background: var(--kerb);
+  border: 2.5px solid var(--asphalt);
+  border-radius: 14px;
+  box-shadow: 0 3px 0 var(--asphalt);
+  color: var(--asphalt);
+  font: 600 14px / 1.25 var(--font);
+  /* Sits above its anchor point on the roof, with the tail pointing down at it. */
+  transform: translate(-50%, calc(-100% - 12px));
+  transform-origin: 50% 100%;
+  animation: bubble-life 5s ease-out forwards;
+}
+
+.bubble::after {
+  content: "";
+  position: absolute;
+  left: calc(50% - 7px);
+  bottom: -9px;
+  width: 12px;
+  height: 12px;
+  background: var(--kerb);
+  border-right: 2.5px solid var(--asphalt);
+  border-bottom: 2.5px solid var(--asphalt);
+  transform: rotate(45deg);
+}
+
+.bubble-speaker {
+  display: block;
+  color: var(--asphalt-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Last words get the darker treatment, since that character is about to go. */
+.bubble-last {
+  background: var(--asphalt);
+  color: var(--kerb);
+}
+
+.bubble-last::after {
+  background: var(--asphalt);
+}
+
+.bubble-last .bubble-speaker {
+  color: var(--taxi);
+}
+
+@keyframes bubble-life {
+  0% {
+    opacity: 0;
+    scale: 0.6;
+  }
+  5% {
+    opacity: 1;
+    scale: 1.06;
+  }
+  9% {
+    scale: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 /* Ready: the Start run button, with the characters' cards in a strip underneath. */
@@ -382,5 +456,19 @@ body {
 
   .ready {
     animation: none;
+  }
+
+  .bubble {
+    animation-name: bubble-fade;
+  }
+}
+
+@keyframes bubble-fade {
+  0%,
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
   }
 }

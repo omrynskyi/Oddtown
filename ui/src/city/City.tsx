@@ -4,8 +4,9 @@ import { Vector3 } from "three";
 import type { Town } from "../town";
 import { Building } from "./Building";
 import { planCity, type CityPlan } from "./generate";
-import { TILE } from "./layout";
+import { BUILDING_HEIGHTS, TILE } from "./layout";
 import { Model } from "./Model";
+import { SpeechBubble } from "./SpeechBubble";
 
 /** The tallest KayKit building, in world units, for fitting the camera. */
 const BUILDING_HEIGHT = 3.1;
@@ -49,6 +50,22 @@ export function City({ town }: { town: Town }) {
             );
           })}
         </Suspense>
+        {plan.lots.map((lot, i) => {
+          const id = town.lots[i];
+          const speech = id ? town.speech[id] : undefined;
+          if (!id || !speech) return null;
+          // Neighbors' bubbles sit at slightly different heights so they overlap less.
+          const height = (BUILDING_HEIGHTS[buildings[id]] ?? 3) + 0.35 + (i % 2) * 0.6;
+          return (
+            <SpeechBubble
+              key={`${id}-${speech.seq}`}
+              position={[lot.position[0], height, lot.position[2]]}
+              speaker={town.characters[id].persona.name.split(" ")[0]}
+              text={speech.text}
+              lastWords={speech.lastWords}
+            />
+          );
+        })}
       </group>
     </Canvas>
   );

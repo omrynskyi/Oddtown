@@ -5,6 +5,18 @@ export const TILE = 2;
 
 export const BUILDINGS = ["A", "B", "C", "D", "E", "F", "G", "H"].map((letter) => `building_${letter}`);
 
+/** How tall each building is, in world units, so a speech bubble sits just above its roof. */
+export const BUILDING_HEIGHTS: Record<string, number> = {
+  building_A: 1.65,
+  building_B: 1.65,
+  building_C: 2.98,
+  building_D: 2.97,
+  building_E: 2.35,
+  building_F: 2.35,
+  building_G: 2.98,
+  building_H: 3.05,
+};
+
 export interface Placement {
   model: string;
   position: [number, number, number];

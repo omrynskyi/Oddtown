@@ -15,6 +15,13 @@ export interface Character {
   lot: number;
 }
 
+/** The last thing a character said. `seq` changes with every new line, so the bubble can restart. */
+export interface Speech {
+  text: string;
+  seq: number;
+  lastWords: boolean;
+}
+
 export interface Town {
   runId: string | null;
   seed: string | null;
@@ -22,6 +29,8 @@ export interface Town {
   characters: Record<string, Character>;
   /** The id of the character living on each lot, or null for an empty lot. */
   lots: (string | null)[];
+  /** Each character's latest line, shown in a speech bubble above its house. */
+  speech: Record<string, Speech>;
   lastSeq: number;
 }
 
@@ -31,6 +40,7 @@ export const initialTown: Town = {
   phase: "ask",
   characters: {},
   lots: Array(LOT_COUNT).fill(null),
+  speech: {},
   lastSeq: 0,
 };
 
@@ -70,6 +80,10 @@ function applyEvent(town: Town, event: AnyEvent): Town {
       return advance(town, "ready");
     case "run.started":
       return advance(town, "running");
+    case "agent.decision":
+      return say(town, event.agent_id, event.payload.say, event.seq, false);
+    case "agent.last_words":
+      return say(town, event.agent_id, event.payload.text, event.seq, true);
     case "agent.died": {
       const id = event.agent_id;
       const character = id ? town.characters[id] : undefined;
@@ -81,6 +95,11 @@ function applyEvent(town: Town, event: AnyEvent): Town {
     default:
       return town;
   }
+}
+
+function say(town: Town, id: string | null, text: string, seq: number, lastWords: boolean): Town {
+  if (!id || !town.characters[id] || !text.trim()) return town;
+  return { ...town, speech: { ...town.speech, [id]: { text, seq, lastWords } } };
 }
 
 /** A newcomer takes the lot of the character it replaces, otherwise the first empty lot. */

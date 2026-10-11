@@ -63,6 +63,26 @@ describe("town reducer", () => {
     expect(townReducer(ended, { kind: "event", event: replayedCreate }).phase).toBe("ended");
   });
 
+  it("keeps each character's latest line, including its last words", () => {
+    const decisions = events.filter((e) => e.type === "agent.decision");
+    const firstSpeaker = decisions[0].agent_id!;
+    const town = play(events.slice(0, events.indexOf(decisions[0]) + 1));
+    expect(town.speech[firstSpeaker]).toEqual({ text: decisions[0].payload.say, seq: decisions[0].seq, lastWords: false });
+
+    const end = play(events);
+    const lastLine = [...decisions].reverse().find((e) => e.agent_id === firstSpeaker)!;
+    const died = events.find((e) => e.type === "agent.died")!;
+    const lastWords = events.find((e) => e.type === "agent.last_words")!;
+    if (firstSpeaker !== died.agent_id) expect(end.speech[firstSpeaker].seq).toBe(lastLine.seq);
+    expect(end.speech[died.agent_id!]).toEqual({ text: lastWords.payload.text, seq: lastWords.seq, lastWords: true });
+  });
+
+  it("ignores lines from characters who never moved in", () => {
+    const town = play(upTo("run.started"));
+    const stranger = { run_id: RUN, seq: town.lastSeq + 1, ts: 0, type: "agent.decision", agent_id: "char_nobody", payload: { action: "twist", say: "Hi", reason: "" } };
+    expect(townReducer(town, { kind: "event", event: stranger }).speech).toEqual({});
+  });
+
   it("ignores event types the UI doesn't use", () => {
     const town = play(upTo("run.ready"));
     const share = { run_id: RUN, seq: town.lastSeq + 1, ts: 0, type: "idea.share", agent_id: "char_dez", payload: {} };
