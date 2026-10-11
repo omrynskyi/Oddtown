@@ -26,8 +26,8 @@ class MemoryRegistry(Registry):
     async def search(self, **match) -> list[Record]:
         return [json.loads(json.dumps(r)) for r in _records.values() if matches(r, match)]
 
-    async def remove(self, agent_id: str) -> None:
-        _records.pop(agent_id, None)
+    async def remove(self, agent_id: str) -> bool:
+        return _records.pop(agent_id, None) is not None
 
     @staticmethod
     def reset() -> None:
@@ -62,5 +62,9 @@ class FileRegistry(Registry):
                 found.append(record)
         return found
 
-    async def remove(self, agent_id: str) -> None:
-        self._path(agent_id).unlink(missing_ok=True)
+    async def remove(self, agent_id: str) -> bool:
+        try:
+            self._path(agent_id).unlink()  # atomic: only one unlink of a file succeeds
+            return True
+        except FileNotFoundError:
+            return False

@@ -112,20 +112,25 @@ class AgntcyDirectory(Registry):
         except Exception as exc:
             log.debug("routing publish failed: %s", exc)
 
-    async def _delete(self, cids: list[str]) -> None:
+    async def _delete(self, cids: list[str]) -> bool:
+        """True if this call deleted at least one of them."""
         refs = [core_v1.RecordRef(cid=cid) for cid in cids]
         try:
             request = routing_v1.UnpublishRequest(record_refs=routing_v1.RecordRefs(refs=refs))
             await self._call(lambda: self._client.unpublish(request))
         except Exception as exc:
             log.debug("routing unpublish failed: %s", exc)
+        deleted = False
         for ref in refs:
             try:
                 await self._call(lambda ref=ref: self._client.delete([ref]))
+                deleted = True
             except Exception as exc:
-                # Two peers can notice the same death at once. Gone is gone.
+                # Two peers can notice the same death at once. The Directory
+                # tells the later one "not found", so only one of them wins.
                 if "not found" not in str(exc).lower():
                     raise
+        return deleted
 
     async def search(self, **match) -> list[Record]:
         request = search_v1.SearchRecordsRequest(
@@ -154,11 +159,10 @@ class AgntcyDirectory(Registry):
             key=lambda r: r["id"],
         )
 
-    async def remove(self, agent_id: str) -> None:
+    async def remove(self, agent_id: str) -> bool:
         async with self._lock:
             cids = await self._cids_for(agent_id)
-            if cids:
-                await self._delete(cids)
+            return await self._delete(cids) if cids else False
 
     async def close(self) -> None:
         self._client = None

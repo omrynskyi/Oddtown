@@ -136,8 +136,8 @@ async def test_registry_search_filters_and_replaces(tmp_path):
         await registry.register({"id": "x", "kind": "character", "address": "a3", "traits": {"risk": 0.5}})
         assert [r["address"] for r in await registry.search(kind="character")] == ["a3"]
         assert len(await registry.search()) == 2
-        await registry.remove("x")
-        await registry.remove("x")  # removing twice is fine
+        assert await registry.remove("x") is True
+        assert await registry.remove("x") is False  # removing twice is fine, but only the first one wins
         assert [r["id"] for r in await registry.search()] == ["y"]
         with pytest.raises(ValueError):
             await registry.register({"id": "z"})
@@ -157,3 +157,32 @@ async def test_town_that_does_not_forget_dead_peers_keeps_their_records(tmp_path
         assert await a.registry.get("char_b") is not None
     finally:
         await a.leave()
+
+
+@pytest.mark.parametrize("kind", BACKENDS)
+async def test_only_one_agent_gets_to_handle_a_crash(kind, tmp_path):
+    """Several agents bounce off the same crashed peer at once. Exactly one gets a
+    real bounce and does the pick; the rest are told it's already handled."""
+    from transport.town import NOT_IN_REGISTRY
+
+    towns = [(await spawn(kind, tmp_path, f"char_{i}"))[0] for i in range(4)]
+    victim, _ = await spawn(kind, tmp_path, "char_victim")
+    await victim.transport.close()  # crash, record left behind
+    try:
+        async def try_send(town):
+            try:
+                await town.send("char_victim", {"type": "idea.share", "body": {}})
+            except DeadPeerError as exc:
+                return exc.reason
+
+        async def try_broadcast(town):
+            return "bounced" if "char_victim" in await town.broadcast({"type": "rest", "body": {}}) else NOT_IN_REGISTRY
+
+        reasons = await asyncio.gather(
+            try_send(towns[0]), try_send(towns[1]), try_broadcast(towns[2]), try_broadcast(towns[3])
+        )
+        assert sum(r != NOT_IN_REGISTRY for r in reasons) == 1, reasons
+        assert await towns[0].registry.get("char_victim") is None
+    finally:
+        for town in towns:
+            await town.leave()

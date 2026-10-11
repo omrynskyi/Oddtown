@@ -39,8 +39,13 @@ class Registry(ABC):
         """
 
     @abstractmethod
-    async def remove(self, agent_id: str) -> None:
-        """Delete a record. Removing an unknown id is not an error."""
+    async def remove(self, agent_id: str) -> bool:
+        """Delete a record. Returns True only if this call deleted it.
+
+        When several agents remove the same record at once, exactly one gets
+        True. Town uses that to pick the one agent that handles a crash.
+        Removing an unknown id is not an error, it just returns False.
+        """
 
     async def get(self, agent_id: str) -> Record | None:
         found = await self.search(id=agent_id)
