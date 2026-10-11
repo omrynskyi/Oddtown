@@ -17,8 +17,8 @@ uvicorn[standard]==0.54.0
 # Persona schema check and decision-call parsing
 pydantic==2.14.0
 
-# Cosine distances for retrieval, novelty and diversity metrics
+# Trait distances when refining a replacement persona
 numpy==2.5.4
 
-# Still open in the plan: add the LLM client, the embeddings source and
-# langgraph (if chosen) here once the team decides.
+# Still open in the plan: add the LLM client here once the team picks models.
+# Plain asyncio, so no langgraph. No embeddings.
