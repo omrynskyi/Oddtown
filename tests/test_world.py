@@ -112,6 +112,7 @@ async def world(request, tmp_path):
         "AGENT_MODULE": "tests.fake_character",
         "OBSERVER_URL": observer_url,
         "OBSERVER_DB": str(tmp_path / "observer.db"),
+        "ODDTOWN_MODEL": "mock",  # the baseline's one LLM call
     }
     observer = await start_server(
         ["-m", "uvicorn", "observer.app:app", "--port", str(observer_port), "--log-level", "warning"],
@@ -277,12 +278,15 @@ async def test_spawn_with_a_bad_id_is_refused(world):
 
 @pytest.mark.parametrize("world", BACKENDS, indirect=True)
 async def test_killed_character_is_noticed_by_the_peer_that_bounces(world):
-    await start(world, [persona("char_a", send_to=["char_b", 3]), persona("char_b"), persona("char_c")])
+    # endorse=[] keeps the others quiet, so char_a is the only one who can notice
+    quiet = dict(endorse=[])
+    await start(world, [persona("char_a", send_to=["char_b", 3], **quiet), persona("char_b", **quiet), persona("char_c", **quiet)])
     assert (await world.post("/agents/char_b/kill")).json() == {"ok": True}
     await world.until(lambda ev: [e for e in ev if e["type"] == "agent.crashed" and e["agent_id"] == "char_b"])
     # nobody removed char_b's record yet, until char_a's send bounces
     sent = await world.until(lambda ev: [e for e in ev if e["type"] == "test.sent" and e["agent_id"] == "char_a"])
-    assert sent[0]["payload"] == {"to": "char_b", "ok": False}
+    assert sent[0]["payload"] == {"to": "char_b", "ok": False, "reason": sent[0]["payload"]["reason"]}
+    assert sent[0]["payload"]["reason"] != "not in the registry"
     assert (await world.status())["living"] == ["char_a", "char_c"]
     assert (await world.post("/agents/char_b/kill")).status_code == 404
 
@@ -314,7 +318,7 @@ async def test_run_ends_with_finalists_by_living_support(world):
     ended = await world.until(lambda ev: [e for e in ev if e["type"] == "run.ended"])
     assert len(ended) == 1
     payload = ended[0]["payload"]
-    assert payload["baseline"] == []
+    assert len(payload["baseline"]) == 3 and all(isinstance(i, str) and i for i in payload["baseline"])
     oak = payload["finalists"][0]
     assert oak["branch_id"] == "br_oak"
     assert oak["text"] == "br_oak on a coffee subscription"
@@ -336,3 +340,35 @@ async def test_tie_at_the_cut_asks_a_human(world):
     assert response.json() == {"ok": True}
     answers = await world.until(lambda ev: [e for e in ev if e["type"] == "human.answer"])
     assert answers[0]["payload"] == {"request_id": request_id, "answer": "keep both"}
+
+
+@pytest.mark.parametrize("world", BACKENDS, indirect=True)
+async def test_world_noticing_a_crash_first_leaves_it_for_a_character(world):
+    """The world's broadcast hits the crashed character first, but keeps its record,
+    so the character whose send bounces later still sees a crash and does the pick."""
+    quiet = dict(endorse=[])
+    await start(world, [persona("char_a", send_to=["char_b", 8], **quiet), persona("char_b", **quiet), persona("char_c", **quiet)])
+    assert (await world.post("/agents/char_b/kill")).json() == {"ok": True}
+    await world.until(lambda ev: [e for e in ev if e["type"] == "agent.crashed" and e["agent_id"] == "char_b"])
+    response = await world.post("/inject", json={"kind": "constraint", "text": "no electricity"})
+    assert response.json()["bounced"] == ["char_b"]
+    assert "char_b" in (await world.status())["living"]  # the world didn't remove it
+    sent = await world.until(lambda ev: [e for e in ev if e["type"] == "test.sent" and e["agent_id"] == "char_a"])
+    assert sent[0]["payload"]["ok"] is False
+    assert sent[0]["payload"]["reason"] != "not in the registry"
+    assert (await world.status())["living"] == ["char_a", "char_c"]
+
+
+@pytest.mark.parametrize("world", BACKENDS, indirect=True)
+async def test_human_request_gets_its_id_back_and_the_answer_carries_it(world):
+    await start(world, [persona("char_a", ask_human=["persona_review", "my-ref-1"]), persona("char_b")])
+    results = await world.until(lambda ev: received(ev, "human.request.result"))
+    assert results[0]["agent_id"] == "char_a"
+    reply = results[0]["payload"]["body"]
+    assert reply["ref"] == "my-ref-1" and reply["kind"] == "persona_review"
+    request_id = reply["request_id"]
+    requests = await world.events("human.request")
+    assert requests[0]["payload"]["request_id"] == request_id
+    assert (await world.post(f"/human/{request_id}/answer", json={"answer": "approve"})).json() == {"ok": True}
+    answers = await world.until(lambda ev: received(ev, "world.event", kind="human.answer"))
+    assert {e["payload"]["body"]["request_id"] for e in answers} == {request_id}

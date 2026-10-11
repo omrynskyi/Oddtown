@@ -13,6 +13,7 @@ field says what else it does:
     die_after     seconds after the seed to post last words and leave
     spawn         a persona to ask the world to start, sent just before dying
     send_to       [peer_id, seconds] send an idea.share after that delay
+    ask_human     [kind, ref] send a human.request to the world after the seed
 """
 
 import asyncio
@@ -61,14 +62,17 @@ async def main() -> None:
             await town.broadcast({"type": "objection", "body": {"branch_id": branch_id, "reason": reason}})
         if script.get("tokens"):
             await town.send(await world_id(), {"type": "usage.report", "body": {"tokens": script["tokens"]}})
+        if script.get("ask_human"):
+            kind, ref = script["ask_human"]
+            await town.send(await world_id(), {"type": "human.request", "body": {"kind": kind, "ref": ref}})
         if script.get("send_to"):
             peer, delay = script["send_to"]
             await asyncio.sleep(delay)
             try:
                 await town.send(peer, {"type": "idea.share", "body": {"text": "hello?"}})
                 await aemit(run_id, "test.sent", {"to": peer, "ok": True}, agent_id)
-            except DeadPeerError:
-                await aemit(run_id, "test.sent", {"to": peer, "ok": False}, agent_id)
+            except DeadPeerError as exc:
+                await aemit(run_id, "test.sent", {"to": peer, "ok": False, "reason": exc.reason}, agent_id)
         if "rest_after" in script:
             await asyncio.sleep(script["rest_after"])
             await town.broadcast({"type": "rest", "body": {}})

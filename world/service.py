@@ -51,6 +51,7 @@ from world.ledger import Ledger
 log = logging.getLogger("world")
 
 WORLD_ID = "world"
+BASELINE_TIMEOUT_S = float(os.environ.get("BASELINE_TIMEOUT_S", "90"))
 DEFAULT_CAST = ROOT / "personas" / "starting_cast.json"
 SEED_BRANCH_ID = "br_seed"
 
@@ -88,11 +89,17 @@ class Run:
         self.launcher: Launcher | None = None
         self.cast_ids: list[str] = []
         self.born: set[str] = set()
+        self.constraints: list[str] = []
+        # One LLM's three ideas for the same seed, started at /start so its latency hides behind the run.
+        self.baseline_task: asyncio.Task | None = None
+        self.baseline_constraints: list[str] = []
 
 
 class World:
     def __init__(self):
-        self.town = Town.from_env(WORLD_ID)
+        # forget_dead=False: when the world's broadcast hits a crashed character, it
+        # leaves the record for a character to find, since that character does the pick.
+        self.town = Town.from_env(WORLD_ID, forget_dead=False)
         self.run: Run | None = None
         self._end_lock = asyncio.Lock()
         self._tasks: set[asyncio.Task] = set()
@@ -184,6 +191,7 @@ class World:
         run.state = "running"
         run.started_at = time.monotonic()
         self.spawn(self._watchdog(run))
+        run.baseline_task = self.spawn(self._baseline(run.request.seed, []))
         await self.emit("run.started", {})
         seed_branch = {
             "branch_id": SEED_BRANCH_ID,
@@ -207,10 +215,29 @@ class World:
         # Stop and human answers show up there as run.ended and human.answer.
         if kind in ("seed", "constraint", "feedback"):
             await self.emit("world.event", {"kind": kind, "text": text})
-        dead = await self.town.broadcast({"type": "world.event", "body": body})
-        for agent_id in dead:
-            await self.emit("agent.bounced", {"noticed_by": WORLD_ID}, agent_id)
-        return dead
+        if kind == "constraint" and self.run:
+            self.run.constraints.append(text)
+        # Bounces are reported but not acted on. A character that bounces does the pick.
+        return await self.town.broadcast({"type": "world.event", "body": body})
+
+    async def _baseline(self, seed: str, constraints: list[str]) -> list[str]:
+        try:
+            from agents.baseline import run_baseline
+
+            return await asyncio.wait_for(run_baseline(seed, constraints), BASELINE_TIMEOUT_S)
+        except Exception as exc:
+            log.warning("baseline failed: %s", exc)
+            return []
+
+    async def _collect_baseline(self, run: Run) -> list[str]:
+        """The baseline gets the same seed and constraints the town got by the end."""
+        if run.baseline_task is None:
+            return []
+        if run.constraints != run.baseline_constraints:
+            # Constraints arrived after it started, so ask again with all of them.
+            run.baseline_task.cancel()
+            return await self._baseline(run.request.seed, list(run.constraints))
+        return await run.baseline_task
 
     async def _watchdog(self, run: Run) -> None:
         while run.state == "running":
@@ -228,7 +255,8 @@ class World:
             run.state = "ending"
             living = await self.living()
             tally = run.ledger.finalists(living)
-            run.result = {"reason": reason, "living": sorted(living), **tally}
+            baseline = [] if failed else await self._collect_baseline(run)
+            run.result = {"reason": reason, "living": sorted(living), **tally, "baseline": baseline}
             if not failed:
                 await self.emit("run.ended", self._run_ended_payload(run.result))
                 for tied in tally["ties"]:
@@ -257,10 +285,9 @@ class World:
                     "reasons": {c["agent_id"]: c["reason"] for c in f["champions"] if c["reason"]},
                 }
             )
-        # The baseline (one LLM's three ideas) comes from Anthony's agents/baseline.py once it exists.
         return {
             "finalists": finalists,
-            "baseline": [],
+            "baseline": result["baseline"],
             "reason": result["reason"],
             "ties": result["ties"],
             "living": result["living"],
@@ -314,6 +341,13 @@ class World:
         request = {"request_id": request_id, "kind": kind, "requested_by": requested_by, "details": details}
         self.run.human_requests[request_id] = {**request, "answer": None}
         await self.emit("human.request", request, requested_by)
+        if requested_by != WORLD_ID:
+            # Tell the asker which id the answer will carry. `ref` is whatever it sent to match on.
+            reply = {"request_id": request_id, "ref": details.get("ref"), "kind": kind}
+            try:
+                await self.town.send(requested_by, {"type": "human.request.result", "body": reply})
+            except DeadPeerError:
+                pass
         return request_id
 
     async def answer_human(self, run_id: str, request_id: str, answer: str) -> None:
