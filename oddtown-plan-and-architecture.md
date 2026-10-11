@@ -69,7 +69,7 @@ Every character is a JSON persona with a strong worldview, six numeric trait axe
 }
 ```
 
-The trait axes make differences visible on the map view. Embeddings of the full persona text do the actual novelty scoring.
+The trait axes give each character a quick numeric fingerprint. Refiners use them to push a newcomer away from the living character it sits closest to.
 
 | Axis | -1 means | +1 means |
 | --- | --- | --- |
@@ -103,7 +103,7 @@ Each agent counts its own lifespan in actions and wall-clock time, so there is n
 
 Agents see how much life they have left in every prompt. We expect near-death behavior to change, like pushing harder, compromising, or backing a rival, but we never script it. We only measure it.
 
-Lifespan can be fixed or earned, and that is a setting. In popularity mode every endorsement an agent's branch receives adds actions. In novelty mode only endorsements on branches that are far from the other live branches count. Our hypothesis is that popularity mode drifts toward samey ideas.
+Lifespan is fixed, so every character gets the same budget no matter how popular its ideas are.
 
 When an agent dies it posts one last pitch of up to 280 characters and picks its replacement team. Then it removes its Directory record, closes its sessions and exits. Its branches stay on the tree, but a branch's support only counts living backers, so ideas have to keep winning fresh support.
 
@@ -111,15 +111,13 @@ When an agent dies it posts one last pitch of up to 280 characters and picks its
 
 1. Pick. As its last act, the dying agent pulls the living roster from the Directory and picks three survivors at random. The first one proposes and the other two refine, in that order.
 2. Propose. The proposer writes a full persona for someone as unlike the living town as possible, itself included. It sees a summary of every living persona.
-3. First refine. The proposer sends the draft to the first refiner, who changes it once through its own worldview. It also sees which living character the draft sits closest to, and pushes it further away.
+3. First refine. The proposer sends the draft to the first refiner, who changes it once through its own worldview. It also sees which living character the draft sits closest to by trait distance, and pushes it further away.
 4. Second refine. The first refiner passes it on, and the second refiner makes one more change the same way.
 5. Birth. The second refiner runs the schema and content checks, starts the new agent and publishes its record to the Directory. The newcomer introduces itself to the town.
 
 Nobody votes and nothing loops, so a replacement costs three LLM calls plus the content check. The three designers usually want different things, so the newcomer ends up as a compromise none of them fully controlled.
 
 If the dying agent crashes before it can pick, the first peer whose message to it bounces does the pick instead. If a designer dies mid-design, the next one in line skips that step. If the content check fails, the human sees the persona and either approves it or skips the replacement.
-
-We measure novelty instead of enforcing it. Every newcomer's distance to its nearest living character gets logged, along with reinventions, which is when a newcomer lands close to someone who already died.
 
 ### Starting parameters
 
@@ -132,7 +130,6 @@ These are first guesses to tune in hour 6 with real runs.
 | Starting lifespans | Staggered between 50 and 100 percent of max | Spreads deaths out |
 | Design team | 3 random survivors, 1 proposes and 2 refine | Who shapes each newcomer |
 | Active endorsements | 2 per agent | Scarcity of support |
-| Earned life | 5 actions per qualifying endorsement | Earned-life modes |
 
 ## System architecture
 
@@ -140,7 +137,7 @@ Every character is its own process that reaches the others through a SLIM node, 
 
 ```mermaid
 flowchart TB
-  ui["Web UI<br/>trees, map, feed, inject panel"]
+  ui["Web UI<br/>city view, idea tree, inject panel"]
   obs["Observer<br/>event log in SQLite, read-only<br/>powers the live view and replay"]
   world["World service<br/>injects seed and constraints<br/>starts agent processes, never decides"]
   subgraph town["Character agents, one process each, 6 alive at a time"]
@@ -151,7 +148,7 @@ flowchart TB
     b --- slim
   end
   dir["AGNTCY Directory<br/>OASF persona records<br/>register, search by trait, delete on death"]
-  llm["LLM and embeddings<br/>one call per action, hosted or local"]
+  llm["LLM<br/>one call per action, hosted or local"]
   obs --> ui
   ui -->|start run, inject| world
   world -->|broadcasts events| slim
@@ -169,9 +166,9 @@ The only arrow into the town from outside is the world service's broadcast, and 
 | AGNTCY Directory | `dirctl daemon start` on localhost:8888, `agntcy-dir` Python SDK | Stores each persona as an OASF record with traits and lineage |
 | World service | FastAPI | Broadcasts seeds and constraints, starts agent processes on request, stops the run at the token budget |
 | Observer | FastAPI, SQLite, WebSocket | Append-only event log, live feed to the UI, replay of any run |
-| Web UI | React, TypeScript, Vite, d3 | Idea tree, character family tree, persona map, message feed, inject panel, human request cards |
+| Web UI | React, TypeScript, Vite, react-three-fiber, d3 | Isometric city view with a house per character and speech bubbles, idea tree view, inject panel, human request cards |
 | Experiment runner | Python script | Runs baselines and conditions headless and writes a metrics CSV |
-| LLM and embeddings | Still open | One decision call per action, embeddings for retrieval and novelty |
+| LLM | Still open | One decision call per action, plus the judge calls that score runs. No embeddings anywhere |
 
 ### How we use AGNTCY
 
@@ -248,7 +245,7 @@ Each character runs a trimmed version of the Generative Agents loop, with one LL
 
 ### Memory stream
 
-Every observation lands in a per-agent list with its text, timestamp, kind, importance from 1 to 10 and an embedding. Kinds include heard idea, reaction, endorsement seen, world event, replacement, death and reflection.
+Every observation lands in a per-agent list with its text, timestamp, kind and importance from 1 to 10. Kinds include heard idea, reaction, endorsement seen, world event, replacement, death and reflection.
 
 Each character rates importance itself, from 1 to 10, through its own worldview. A constraint like "it has to work with no electricity" might be a 10 for Marguerite and a 3 for Priya, so the same event shapes each character's memory differently.
 
@@ -256,10 +253,10 @@ Rating costs no extra calls. The decision call returns scores for every observat
 
 ### Retrieval
 
-Retrieval uses the paper's score with equal weights. Each term is normalized to 0 to 1, recency decays by 0.99 per action, and we keep the top 8 memories.
+Retrieval uses the paper's score without the relevance term, so it needs no embeddings. Both terms are normalized to 0 to 1 with equal weights, recency decays by 0.99 per action, and we keep the top 8 memories.
 
 ```latex
-\text{score}(m) = \text{recency}(m) + \text{importance}(m) + \text{relevance}(m, q)
+\text{score}(m) = \text{recency}(m) + \text{importance}(m)
 ```
 
 ### Reflection
@@ -312,7 +309,7 @@ Each agent watches support on its own. When no branch has gained or lost a livin
 
 ### Keeping the disagreement
 
-The output is the top branches by living support that are at least a distinctness threshold apart, starting at a cosine distance of 0.35, up to three. Each finalist comes with its champions and their reasons, plus the strongest objection from a rival faction as a minority report. Two finalists closer than that threshold are really the same idea, so only those get merged.
+At the end, an LLM judge reads the ten most-supported branches and picks up to three that are genuinely different ideas, favoring the ones with more living support. Each finalist comes with its champions and their reasons, plus the strongest objection from a rival faction as a minority report. Branches the judge calls the same idea get folded into the finalist they match.
 
 Disagreement about taste is kept and reported, because that is the useful part. Disagreement about feasibility, like whether something can be built for under $50, is a factual question, so it goes to the human instead of being argued forever.
 
@@ -334,8 +331,7 @@ The headline experiment asks whether the full town keeps idea diversity from col
 ### Hypotheses
 
 1. The full town produces a more diverse and more original set of ideas than one LLM, without losing coherence.
-2. Survivor-designed replacements keep diversity up over time compared to random replacements or characters that never die.
-3. Stretch goal. Popularity-earned lifespan drifts toward samey ideas compared to novelty-earned lifespan.
+2. Survivor-designed replacements end a run with more distinct ideas than random replacements or characters that never die.
 
 ### Conditions
 
@@ -349,24 +345,22 @@ The headline experiment asks whether the full town keeps idea diversity from col
 | A2 Random replacements | Full town, but newcomers are random personas | Whether survivor design matters |
 | A3 Immortal town | Full town with no lifespans, so nobody is ever replaced | Whether death and turnover matter |
 
-Every condition outputs 10 ideas for scoring. For the town that means the 10 most-supported branches that clear the distinctness threshold from each other.
+Every condition outputs 10 ideas for scoring. For the town that means the 10 most-supported branches.
 
 ### Metrics
 
 | Metric | How we compute it |
 | --- | --- |
-| Diversity | Mean pairwise cosine distance between the 10 ideas, plus how many stay distinct after merging pairs closer than the threshold |
-| Distance from seed | Mean cosine distance between each idea and the seed |
+| Distinct ideas | An LLM judge reads the 10 ideas in shuffled order with no condition label and counts how many are genuinely different |
 | Coherence | Blind human rating from 1 to 5 on whether the idea makes sense and could exist, with an LLM judge on a fixed rubric as backup |
 | Originality | Blind human rating from 1 to 5 on how surprising the idea is |
-| Diversity over time | Mean distance between live branches every 30 seconds, drawn as one line per condition |
-| Behavior | Support shifts after an injected constraint, merge rate in the last fifth of an agent's life against earlier, and reinvention count |
+| Behavior | Support shifts after an injected constraint, and merge rate in the last fifth of an agent's life against earlier |
 
 ### Run protocol
 
-We run 3 seed ideas with 3 random seeds per condition, using the same model, temperature and embedding model throughout. For human ratings we ask 10 to 15 people at the event to rate a shuffled, unlabeled form of ideas from each condition.
+We run 3 seed ideas with 3 random seeds per condition, using the same model and temperature throughout. For human ratings we ask 10 to 15 people at the event to rate a shuffled, unlabeled form of ideas from each condition.
 
-The sample is small, so we report means with their spread and say so on the slide. The diversity-over-time chart is the main exhibit in the pitch.
+The sample is small, so we report means with their spread and say so on the slide. A bar chart of distinct ideas per condition is the main exhibit in the pitch.
 
 ## Demo script
 
@@ -374,14 +368,14 @@ The demo runs about four minutes and follows one seed idea from a samey baseline
 
 | Time | On screen | What we say |
 | --- | --- | --- |
-| 0 to 30 s | Ten "radical" twists of "a coffee subscription" from one LLM, all clustered on the map | One model alone gives you ten versions of the same idea |
-| 30 s to 1 min | Oddtown starts with the same seed, or a judge's idea, and six characters light up | These characters only talk to each other, and nobody runs the town |
-| 1 to 1.5 min | Two factions form on the idea tree, and a merge negotiation plays out in the feed | Click a character to see its memories and why it changed its mind |
-| 1.5 to 2 min | A character's lifespan runs out, it posts its last pitch and picks three survivors, one drafts a replacement, two refine it, and the newcomer lands on the map | Death is how new perspectives get into the town |
+| 0 to 30 s | Ten "radical" twists of "a coffee subscription" from one LLM, shown as a list, and the judge finds only a few are actually different | One model alone gives you ten versions of the same idea |
+| 30 s to 1 min | Oddtown starts with the same seed, or a judge's idea, and six houses in the city light up with speech bubbles | These characters only talk to each other, and nobody runs the town |
+| 1 to 1.5 min | Two factions show up as flag colors across the city and on the idea tree, and a merge negotiation plays out in speech bubbles | Click a house to see that character's memories and why it changed its mind |
+| 1.5 to 2 min | A character's lifespan runs out, it posts its last pitch and picks three survivors, one drafts a replacement, two refine it, and a new building rises on the empty lot | Death is how new perspectives get into the town |
 | 2 to 2.5 min | We inject "it has to work with no electricity" and branches die or reshape | Marguerite's branch suddenly gets backers |
 | 2.5 to 3 min | We kill an agent's process by hand, a message to it bounces, and the peer who noticed picks the replacement team | Even a crash gets handled with nobody in charge |
 | 3 to 3.5 min | The run ends with three finalists, minority reports and one human decision card | We kept the disagreement on purpose, and asked a human only for the tie |
-| 3.5 to 4 min | Diversity over time for every condition, plus the human ratings | Here is the evidence, and here is what surprised us |
+| 3.5 to 4 min | Distinct ideas for every condition, plus the human ratings | Here is the evidence, and here is what surprised us |
 
 The UI can replay any run from its event log. We record a full run with a locked seed by hour 10 and keep it ready in case the live run stalls or the network dies.
 
@@ -400,9 +394,9 @@ The build runs four lanes in parallel, one per person, and every lane meets at t
 | Agent brain | Memory, retrieval, decision call | 1.5 to 4 |
 | Agent brain | Lifespan and replacements | 4 to 6 |
 | Agent brain | Reflection, prompt tuning | 6 to 8.5 |
-| UI | Scaffold on mock events | 0 to 2 |
-| UI | Idea tree and message feed | 2 to 5 |
-| UI | Persona map, family tree | 5 to 7.5 |
+| UI | Scaffold on mock events, isometric city with six lots | 0 to 2 |
+| UI | City view with houses, speech bubbles, faction flags, deaths and births | 2 to 5 |
+| UI | Idea tree view | 5 to 7.5 |
 | UI | Inject panel, human cards, polish | 7.5 to 10 |
 | Evidence and pitch | Baseline scripts B1 to B3 | 0 to 3 |
 | Evidence and pitch | Metrics and condition runner | 3 to 6 |
@@ -412,14 +406,14 @@ The build runs four lanes in parallel, one per person, and every lane meets at t
 
 Gates fall at hour 1.5 (two agents talk), hour 4 (town gossips), hour 6 (replacement works), hour 8 (UI on live runs), hour 10 (feature freeze) and hour 12 (submit).
 
-The UI lane builds against mock events from hour 0, so it never waits on the agents. If we only have three people, the brain and UI owners split the evidence lane after hour 6.
+The UI lane builds against mock events from hour 0, so it never waits on the agents. With three people, use the split in [team-split.md](team-split.md) instead of these four lanes.
 
 ### Gate checks
 
 - [ ] Hour 1.5. Two agents exchange an A2A message over SLIM, and one persona record is searchable in the Directory.
 - [ ] Hour 4. Six characters gossip a seed end to end, and their branches show up in the observer log.
 - [ ] Hour 6. An agent dies cleanly, three survivors design its replacement, and the newcomer joins the gossip.
-- [ ] Hour 8. The UI draws a live run with the idea tree, persona map and message feed.
+- [ ] Hour 8. The UI draws a live run in the city view and the idea tree.
 - [ ] Hour 10. Feature freeze, baseline numbers in, and a full demo run recorded with a locked seed.
 - [ ] Hour 12. Demo, architecture overview, implementation details and results submitted.
 
@@ -434,7 +428,7 @@ The biggest risk is AGNTCY setup eating the first hours, so all transport and re
 | SLIM or the app-sdk fights us | Two agents can't exchange a message by hour 1.5 | Switch the app-sdk transport to NATS like Lungo's default, and if that fails, use plain A2A over HTTP |
 | Directory integration stalls | Push and search don't work by hour 3 | A small in-memory registry with the same push, search and delete interface |
 | LLM latency or rate limits | Agents average slower than one action per 10 seconds | Cap concurrency, use a smaller model for decisions, shorten runs |
-| Replacements all look alike | Newcomers' novelty scores stay low | Raise the proposer's temperature, show it past newcomers, seed it with a random job, era and obsession from word lists |
+| Replacements all look alike | Newcomers read like characters already in the town | Raise the proposer's temperature, show it past newcomers, seed it with a random job, era and obsession from word lists |
 | A replacement persona is offensive | Content check fires | The human approves or skips it |
 | Deaths bunch up | Several characters die within the same minute | Stagger starting lifespans more widely |
 | Agents drift off the idea | Branches stop mentioning the seed | Seed and constraints go in every prompt |
@@ -444,17 +438,16 @@ The biggest risk is AGNTCY setup eating the first hours, so all transport and re
 If we run out of time, we cut in this order.
 
 1. AGNTCY Identity badges on ballots
-2. Earned-lifespan modes, keeping fixed lifespan only
-3. A2 random-replacement ablation
-4. Polish on the persona map
-5. A1 memory ablation
+2. A2 random-replacement ablation
+3. Polish on the city view, like cars driving between houses
+4. A1 memory ablation
 
 We never cut gossip, branches, lifespans, replacements, the B1 baseline or replay.
 
 ## Open questions
 
-- [ ] How many people are on the team, and who owns each lane in the build plan?
-- [ ] Which LLM and embedding model, and do we run them hosted or locally on the event hardware?
+- [x] How many people are on the team? Three, split as in [team-split.md](team-split.md).
+- [ ] Which LLM, and do we run it hosted or locally on the event hardware?
 - [ ] LangGraph to match coffeeAGNTCY, or plain asyncio because it's faster for us to write?
 - [ ] Do we let a judge pick the seed idea live, or stick to a rehearsed seed?
 - [ ] Can we get 10 to 15 people at the event to blind-rate ideas?
