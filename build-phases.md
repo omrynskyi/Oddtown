@@ -163,3 +163,4 @@ These are in [ui-plan.md](ui-plan.md) as not decided yet. Each can become its ow
 - Faction flags and a billboard for world events.
 - The inject panel and human request cards.
 - The end screen with the finalists next to the single LLM's three ideas.
+- Live reactions in the title. During the run, the title changes to the latest character's take on the idea, like "Tony thinks your plan is stupid" or "Lyla likes the idea but thinks it could be different". The simplest version builds the line from `agent.decision`, using the character's name and its action: back means it likes it, trash means it doesn't, and twist means it likes it but wants it different. If those lines feel too samey, ask Anthony to add a short `headline` field to `agent.decision`.

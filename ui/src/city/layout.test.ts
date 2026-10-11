@@ -13,6 +13,15 @@ describe("city layout", () => {
     expect(tiles.filter((t) => lotTiles.includes(t))).toEqual([]);
   });
 
+  it("stands every prop on a block, so nothing floats where a block was left out", () => {
+    const blocks = [...LOTS, ...SCENERY.filter((s) => s.position[1] === 0)];
+    const props = SCENERY.filter((s) => s.position[1] > 0);
+    for (const { model, position: [x, , z] } of props) {
+      const onBlock = blocks.some(({ position: [bx, , bz] }) => Math.abs(x - bx) <= 1 && Math.abs(z - bz) <= 1);
+      expect(onBlock, `${model} at ${x}, ${z}`).toBe(true);
+    }
+  });
+
   it("gives a character the same preferred building every time", () => {
     for (const id of CAST) {
       expect(buildingFor(id)).toBe(buildingFor(id));

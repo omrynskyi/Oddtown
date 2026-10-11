@@ -1,12 +1,13 @@
 // Where everything sits in the city. KayKit tiles are 2 by 2 units, so the city is a grid
 // with a tile every 2 units. The camera looks in from the +x, +z corner, so the buildings
 // line the two far edges and face it, and the near corner is an open plaza that hides nothing.
+// Two plaza blocks are left out so the platform has a stepped edge instead of a plain rectangle.
 //
 //   x:    -4      -2      0       2       4
 //   z=-2  park    lot0    lot1    lot2    park      lots face the main street
 //   z= 0  lot3    corner  road    cross   road      main street
 //   z= 2  lot4    road    plaza   plaza   plaza
-//   z= 4  lot5    road    plaza   plaza   plaza     lots face the side street
+//   z= 4  lot5    road    .       plaza   .         lots face the side street
 
 export const TILE = 2;
 
@@ -58,14 +59,18 @@ export const SCENERY: Placement[] = [
   prop("firehydrant", 3.3, -1.3),
 
   // The plaza in the near corner. Low props only, so it never hides a building.
-  ...[0, 2, 4].flatMap((x) => [tile("base", x, 2), tile("base", x, 4)]),
+  tile("base", 0, 2),
+  tile("base", 2, 2),
+  tile("base", 4, 2),
+  tile("base", 2, 4),
   prop("streetlight", -0.85, 1.2, -Math.PI / 2),
   prop("streetlight", 4.6, 1.2),
-  prop("bench", 1, 3.2, Math.PI),
-  prop("bench", 3, 3.2, Math.PI),
-  prop("bush", 0.2, 4.6),
-  prop("bush", 4.6, 4.6),
-  prop("trash_A", 2, 4.4),
+  prop("bench", 1, 2.6, Math.PI),
+  prop("bench", 3, 2.6, Math.PI),
+  prop("bush", 0.4, 2.5),
+  prop("bush", 1.4, 4.6),
+  prop("bush", 2.6, 4.6),
+  prop("trash_A", 2, 4),
   prop("dumpster", 4.3, 2.5, Math.PI / 2),
 
   // A couple of parked cars so the streets aren't empty.
