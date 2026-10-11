@@ -1,0 +1,24 @@
+# Oddtown Python dependencies. Needs Python 3.12 or newer.
+#   uv venv --python 3.12 && uv pip install -r requirements.txt
+
+# agntcy-dir 1.3+ depends on generated gRPC packages hosted on buf.build, not PyPI.
+# Without this line it silently falls back to agntcy-dir 1.0.0.
+--extra-index-url https://buf.build/gen/python
+
+# AGNTCY: A2A over SLIM, Directory client, observability.
+# app-sdk pins slim-bindings ~=1.1, so the SLIM node image must stay on 1.x too.
+agntcy-app-sdk==0.5.5
+agntcy-dir==1.5.0
+
+# World service and observer
+fastapi==0.143.0
+uvicorn[standard]==0.54.0
+
+# Persona schema check and decision-call parsing
+pydantic==2.14.0
+
+# Cosine distances for retrieval, novelty and diversity metrics
+numpy==2.5.4
+
+# Still open in the plan: add the LLM client, the embeddings source and
+# langgraph (if chosen) here once the team decides.
