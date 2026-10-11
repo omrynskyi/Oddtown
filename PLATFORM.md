@@ -48,7 +48,7 @@ await town.leave()  # on death, after broadcasting agent.last_words
 ```
 
 - `handler(envelope)` runs once per incoming message, after it has been acked. `send` and `broadcast` fill in `msg_id`, `from`, `to` and `sent_at`.
-- A bounced send deletes the dead peer's record before it raises, so the next `characters()` no longer lists it. Catch `DeadPeerError` there to do the replacement pick. The world service never deletes a crashed character's record, so a crash is always left for a character to notice.
+- A bounced send deletes the dead peer's record before it raises, so the next `characters()` no longer lists it. Catch `DeadPeerError` there to do the replacement pick. Only one agent handles each crash: whoever deletes the record first gets a normal bounce, and everyone else gets `DeadPeerError` with reason `NOT_IN_REGISTRY` (from `transport.town`), the same as for an agent that left normally. `broadcast()` only returns the peers this agent won. The world service never deletes a crashed character's record, so a crash is always left for a character to notice.
 - Exit the process after `leave()`. Exit code 0 reads as a death, anything else as a crash.
 - Your agents emit `agent.died` with `picked` themselves, through `observer.client`. The world service doesn't.
 

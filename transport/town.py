@@ -16,6 +16,10 @@ from transport.adapter import DeadPeerError, Envelope, Handler, Transport
 
 log = logging.getLogger(__name__)
 
+# The reason a send gives when the peer's record is already gone: it left
+# normally, or another agent noticed its crash first and is handling it.
+NOT_IN_REGISTRY = "not in the registry"
+
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
@@ -62,31 +66,39 @@ class Town:
         """Point to point. Raises DeadPeerError if the peer is gone."""
         record = await self.registry.get(to)
         if record is None:
-            raise DeadPeerError(to, "not in the registry")
+            raise DeadPeerError(to, NOT_IN_REGISTRY)
         stamped = self._stamp(envelope, to)
         try:
             await self.transport.send(to, record["address"], stamped)
-        except DeadPeerError:
-            await self._forget(to)
+        except DeadPeerError as exc:
+            if self.forget_dead and not await self._forget(to):
+                # Another agent removed the record first, so the crash is theirs to handle.
+                raise DeadPeerError(to, NOT_IN_REGISTRY) from exc
             raise
         return stamped
 
-    async def _forget(self, peer: str) -> None:
+    async def _forget(self, peer: str) -> bool:
+        """Delete a dead peer's record. True if this agent got there first."""
         if not self.forget_dead:
-            return
+            return False
         try:
-            await self.registry.remove(peer)
+            return await self.registry.remove(peer)
         except Exception:
             log.exception("could not remove %s from the registry", peer)
+            return False
 
     async def broadcast(self, envelope: Envelope) -> list[str]:
-        """To every living record, the world service included. Returns who bounced."""
+        """To every living record, the world service included. Returns who bounced.
+
+        With forget_dead on, that's only the peers whose record this agent
+        removed first, the crashes that are this agent's to handle.
+        """
         records = await self.registry.search()
         recipients = {r["id"]: r["address"] for r in records if r["id"] != self.agent_id}
         dead = await self.transport.broadcast(recipients, self._stamp(envelope, None))
-        for peer in dead:
-            await self._forget(peer)
-        return dead
+        if not self.forget_dead:
+            return dead
+        return [peer for peer in dead if await self._forget(peer)]
 
     async def characters(self) -> list[Record]:
         """Every living character except this one."""

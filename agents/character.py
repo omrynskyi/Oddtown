@@ -47,11 +47,12 @@ from agents.messages import (
 from agents.schema import new_branch_id, now_iso, public_persona, validate_persona
 from observer.client import aemit
 from transport.adapter import DeadPeerError
-from transport.town import Town
+from transport.town import NOT_IN_REGISTRY, Town
 
 log = logging.getLogger("character")
 
-NOT_IN_REGISTRY = "not in the registry"  # transport.town's reason when someone already removed the record
+# transport.town's reason when the record is already gone: the peer left normally,
+# or another character noticed its crash first and is doing the pick.
 
 PERSONA_DEFAULTS = {
     "one_liner": "a newcomer", "worldview": "Ideas should surprise people.", "loves": ["surprises"],

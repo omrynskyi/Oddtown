@@ -52,5 +52,6 @@ async def test_concurrent_removes_of_the_same_record(directory):
 
     await directory.register({"id": "char_a", "kind": "character", "address": "a"})
     others = [AgntcyDirectory(directory.address, town=directory.town) for _ in range(4)]
-    await asyncio.gather(*(d.remove("char_a") for d in [directory, *others]))
+    results = await asyncio.gather(*(d.remove("char_a") for d in [directory, *others]))
+    assert results.count(True) == 1, results  # exactly one remover wins
     assert await directory.search() == []
