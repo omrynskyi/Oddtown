@@ -29,6 +29,7 @@ set -a && source .env && set +a
 | --- | --- |
 | `ODDTOWN_MODEL=mock` | Runs the whole town with no API key. Remove it to use each persona's `model`, which is `big-pickle` |
 | `OPENCODE_API_KEY` | Key for OpenCode Zen, where `big-pickle` runs. It's free for now, and OpenCode may use the data to improve the model |
+| `ODDTOWN_LLM_BASE_URL`, `ODDTOWN_REASONING_EFFORT` | Point at another OpenAI-compatible server, like a local Ollama at `http://127.0.0.1:11434/v1`. Set the effort to `none` for thinking models such as `qwen3.6:35b`, which otherwise think for 25+ seconds a call. Ollama ignores the key, but `OPENCODE_API_KEY` must still be set to something |
 | `ANTHROPIC_API_KEY` | Only if a persona names a Claude model. Add the model to `ODDTOWN_MODELS` too |
 | `ODDTOWN_TIME_SCALE` | Multiplies every wait and wall-clock lifespan. 0.1 makes a rehearsal 10 times faster |
 | `ODDTOWN_MAX_ACTIONS`, `ODDTOWN_LIFESPAN_S`, `ODDTOWN_REST_AFTER_S` | Lifespan and stopping, for tuning |

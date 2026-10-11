@@ -286,7 +286,10 @@ async def _openai_call(
     ]
     usage = Usage()
     for attempt in range(2):
-        data = await _post_chat({"model": model, "messages": messages, "max_tokens": config.MAX_TOKENS.get(kind, 4000)})
+        payload = {"model": model, "messages": messages, "max_tokens": config.MAX_TOKENS.get(kind, 4000)}
+        if config.LLM_REASONING_EFFORT:
+            payload["reasoning_effort"] = config.LLM_REASONING_EFFORT
+        data = await _post_chat(payload)
         u = data.get("usage") or {}
         cached = (u.get("prompt_tokens_details") or {}).get("cached_tokens") or 0
         usage.input_tokens += (u.get("prompt_tokens") or 0) - cached

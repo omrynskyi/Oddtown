@@ -7,6 +7,8 @@ shrink a run without touching code:
     ODDTOWN_MODELS       comma-separated models a persona may name (default: big-pickle)
     OPENCODE_API_KEY     key for OpenCode Zen, where big-pickle runs
     ODDTOWN_LLM_BASE_URL OpenAI-compatible endpoint for non-Claude models (default: OpenCode Zen)
+    ODDTOWN_REASONING_EFFORT  reasoning_effort sent to that endpoint, e.g. "none" so a local Ollama
+                         model answers in seconds instead of thinking first (default: not sent)
     ODDTOWN_TIME_SCALE   multiplies every wait and wall-clock lifespan, e.g. 0.1 for a 10x faster town
     ODDTOWN_MAX_ACTIONS  lifespan in actions
     ODDTOWN_LIFESPAN_S   lifespan in wall-clock seconds, before scaling
@@ -31,6 +33,9 @@ MOCK_MODEL = "mock"
 # Models that aren't Claude go to an OpenAI-compatible chat completions endpoint.
 LLM_BASE_URL = os.environ.get("ODDTOWN_LLM_BASE_URL", "https://opencode.ai/zen/v1")
 LLM_API_KEY_ENV = "OPENCODE_API_KEY"
+# Thinking models on Ollama (qwen3.6, nemotron3) think by default: 25+ seconds a call, and sometimes
+# they run out of tokens before answering. "none" turns that off. Unset sends nothing, as before.
+LLM_REASONING_EFFORT = os.environ.get("ODDTOWN_REASONING_EFFORT") or None
 
 # Lifespan and turnover
 MAX_ACTIONS = _int("ODDTOWN_MAX_ACTIONS", 40)

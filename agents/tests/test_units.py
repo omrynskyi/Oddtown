@@ -213,6 +213,9 @@ def fake_endpoint(monkeypatch, replies):
 
     monkeypatch.setenv("OPENCODE_API_KEY", "test-key")
     monkeypatch.delenv("ODDTOWN_MODEL", raising=False)
+    # tests/conftest.py loads .env, so pin the defaults whatever endpoint this machine points at.
+    monkeypatch.setattr(config, "LLM_BASE_URL", "https://opencode.ai/zen/v1")
+    monkeypatch.setattr(config, "LLM_REASONING_EFFORT", None)
     monkeypatch.setattr(llm, "_http", httpx.AsyncClient(transport=httpx.MockTransport(handler)))
     monkeypatch.setattr(llm, "_json_mode", True)
     return seen
@@ -235,6 +238,18 @@ async def test_big_pickle_request_shape_usage_and_fenced_json(monkeypatch):
     assert '"say"' in body["messages"][1]["content"]  # the schema rides at the end of the user message
     assert result.usage.input_tokens == 400 and result.usage.cache_read == 600 and result.usage.total == 1300
     assert "format" in result.sections
+
+
+async def test_reasoning_effort_is_sent_only_when_set(monkeypatch):
+    reply = brain.mock_decision(make_view(), random.Random(0)).model_dump_json()
+    seen = fake_endpoint(monkeypatch, [(200, reply)])
+    system, user = brain.decision_prompt(make_view())
+    await llm.call_json(kind="decision", model="big-pickle", system=system, user=user, out=Decision, mock=None)
+    assert "reasoning_effort" not in json.loads(seen[0].content)
+
+    monkeypatch.setattr(config, "LLM_REASONING_EFFORT", "none")
+    await llm.call_json(kind="decision", model="big-pickle", system=system, user=user, out=Decision, mock=None)
+    assert json.loads(seen[1].content)["reasoning_effort"] == "none"
 
 
 async def test_big_pickle_falls_back_when_json_mode_is_rejected(monkeypatch):
