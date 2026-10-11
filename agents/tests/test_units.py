@@ -111,7 +111,7 @@ def make_view(**overrides) -> View:
 def test_decision_prompt_sections_are_stable_first_and_show_branch_text_once():
     system, user = brain.decision_prompt(make_view())
     assert [s.name for s in system] == ["rules", "persona"]
-    assert [s.name for s in user] == ["world", "town", "branches", "memories", "inbox", "to_score", "task"]
+    assert [s.name for s in user] == ["world", "people", "branches", "memories", "inbox", "to_score", "task"]
     full = "\n".join(s.text for s in system + user)
     assert full.count("Coffee delivered by racing pigeon on a fixed weekly route") == 1
     assert "msg m1" in full and "it has to work with no electricity" in full
@@ -150,7 +150,7 @@ async def test_mock_call_reports_usage_and_sections(monkeypatch):
                                  mock=lambda: brain.mock_decision(view, random.Random(0)))
     assert result.model == "mock"
     assert result.usage.prompt_tokens > 100 and result.usage.output_tokens > 0
-    assert set(result.sections) == {"rules", "persona", "world", "town", "branches", "memories", "inbox", "to_score", "task"}
+    assert set(result.sections) == {"rules", "persona", "world", "people", "branches", "memories", "inbox", "to_score", "task"}
     assert abs(sum(result.sections.values()) - result.usage.prompt_tokens) <= len(result.sections)
 
 

@@ -6,14 +6,15 @@ Everything inside a character's head. Owned by Anthony.
 | --- | --- |
 | `character.py` | The process the world starts with `python -m agents.character`. Joins the town, batches its inbox, takes turns, dies, designs replacements, notices crashes |
 | `brain.py` | Prompts as named sections, the decision, reflection and last-words schemas, and the offline mock brain |
-| `memory.py` | Memory stream, retrieval by recency and importance (top 8), the reflection trigger |
+| `memory.py` | Memory stream, retrieval by recency, importance and relevance to who and what the turn is about (top 8), the reflection trigger |
+| `social.py` | The relationship ledger: what passed between this character and each peer, tallies, their ideas, and its impression of them |
 | `replace.py` | Propose, refine and content-check prompts and schemas for replacements |
 | `llm.py` | Every LLM call. `big-pickle` through OpenCode Zen's OpenAI-compatible API (schema in the prompt, validated, one retry), Claude through the Anthropic SDK, or `mock` |
 | `schema.py` | Persona and branch schemas, and the schema check |
 | `messages.py` | Message types and body shapes |
 | `config.py` | The plan's starting parameters, each overridable from the environment |
 | `baseline.py` | One LLM's three ideas for the same seed |
-| `../personas/starting_cast.json` | The six starting characters |
+| `../personas/starting_cast.json` | The six starting characters. `extended_cast.json` adds six more, for twelve |
 
 ## Run it
 
@@ -33,8 +34,28 @@ set -a && source .env && set +a
 | `ANTHROPIC_API_KEY` | Only if a persona names a Claude model. Add the model to `ODDTOWN_MODELS` too |
 | `ODDTOWN_TIME_SCALE` | Multiplies every wait and wall-clock lifespan. 0.1 makes a rehearsal 10 times faster |
 | `ODDTOWN_MAX_ACTIONS`, `ODDTOWN_LIFESPAN_S`, `ODDTOWN_REST_AFTER_S` | Lifespan and stopping, for tuning |
+| `ODDTOWN_ABLATE` | Mechanisms to switch off, for experiments. See below |
+| `ODDTOWN_PROMPT_LOG` | A folder. Every prompt and answer is appended there, one JSONL file per character |
 
 Tests: `.venv/bin/python -m pytest agents/tests`. `test_town.py` runs the real observer, the real world service and six real characters on the mock model, through a death, a replacement and a crash.
+
+## How characters deal with each other
+
+The prompts don't tell characters to cooperate, befriend or argue. These mechanisms give them what they need to, and what they do with it is up to them. Each can be switched off with `ODDTOWN_ABLATE` (comma-separated, or `all` for the original brain), which is how `research/` measures them.
+
+| Mechanism | What it does |
+| --- | --- |
+| `social` | A ledger per peer, written by code from what actually happened: every exchange in one line, who took up or turned down whose ideas, who built on whose work, and the character's own impression. The prompt's People section shows the full record for the peers a turn is about, and two lines for the rest, so what characters say about each other comes from the record |
+| `relevance` | Memories record who and which branches they're about. Retrieval adds the paper's relevance term, scoring memories by overlap with the peers and branches in the inbox and the agenda |
+| `threads` | An answer to your message, or someone building on your idea, wakes you, so an exchange can go back and forth instead of ending at the first reply |
+| `build` | Every reply can carry `idea`, the character's own version that the message sparked. It becomes a branch built on theirs and goes back with the answer. A reject with an idea is a counter-proposal |
+| `credit` | Twisting someone else's branch tells its authors (`idea.built`), and branches show whose work they build on |
+| `reflect` | Reflection insights cite memory ids and are dropped if they cite nothing real. Reflection also writes a one-line impression of each peer into the ledger |
+| `design` | Replacement designers see every name used so far and the emptiest corner of trait space, computed by code |
+| `rules` | The rewritten rules, which describe the mechanics without telling characters how to behave |
+| `think` | `reason` comes first in the decision schema, so the model thinks before it picks an action |
+
+A dying character finishes any design work it was handed first, and the last character alive designs its own successor, so the town can't go extinct.
 
 ## What a character emits to the observer
 
@@ -46,10 +67,10 @@ Everything goes through `observer.client`, so it passes `observer/events.py`.
 | `branch.created` | `branch_id`, `parent_ids`, `op` (`twist` or `merge`), `authors`, `text` | A twist, or an accepted merge (emitted by whoever accepted) |
 | `endorse`, `unendorse` | `branch_id`, `reason` | Backing or dropping a branch |
 | `agent.last_words`, then `agent.died` | `text`, then `picked` | A death. After a crash, the peer that noticed emits `agent.died` for the dead agent, with `noticed_by` |
-| `agent.reflection` | `insights`, `agenda` | After a reflection |
+| `agent.reflection` | `insights`, `agenda`, `impressions` (`peer_id`, `impression`) | After a reflection |
 | `llm.call` | `kind`, `model`, `input_tokens`, `cache_read_tokens`, `output_tokens`, `latency_ms`, `retries`, `sections` (estimated input tokens per prompt section), `counts` | Every LLM call |
 | `replace.step` | `step` (`propose`, `refine` or `birth`), `replaces`, `persona` | Each step of designing a replacement |
-| Every message between characters | `to`, then the message body | `idea.share`, `idea.pitch`, `merge.propose`, replies, `objection`, `rest`, `agent.hello`, `replace.request`, `persona.draft` |
+| Every message between characters | `to`, then the message body | `idea.share`, `idea.pitch`, `merge.propose`, replies (`idea.reaction` and `pitch.response` carry `branch` when the reply built on the idea), `idea.built`, `objection`, `rest`, `agent.hello`, `replace.request`, `persona.draft` |
 | `llm.error`, `agent.error`, `agent.bounced` | | Something went wrong, or a send bounced |
 
 `agent.born` comes from the world service once the newcomer joins. A newcomer's persona carries a `briefing` (seed, constraints, branches in play), because it missed the seed broadcast.

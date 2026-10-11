@@ -28,6 +28,7 @@ import json
 import logging
 import os
 import random
+import re
 import time
 import uuid
 from collections import deque
@@ -39,8 +40,9 @@ from agents import brain, config, llm, replace
 from agents.brain import Decision, Reply, View, clip
 from agents.llm import LLMError
 from agents.memory import MemoryStream
+from agents.social import Ledger, quote
 from agents.messages import (
-    AGENT_HELLO, AGENT_LAST_WORDS, ENDORSE, HUMAN_REQUEST, IDEA_PITCH, IDEA_REACTION, IDEA_SHARE,
+    AGENT_HELLO, AGENT_LAST_WORDS, ANSWERS, ENDORSE, HUMAN_REQUEST, IDEA_BUILT, IDEA_PITCH, IDEA_REACTION, IDEA_SHARE,
     MERGE_PROPOSE, MERGE_RESPONSE, OBJECTION, PERSONA_DRAFT, PITCH_RESPONSE, REPLACE_REQUEST, REST,
     SPAWN_REQUEST, SPAWN_RESULT, UNENDORSE, USAGE_REPORT, WORLD_EVENT, envelope,
 )
@@ -59,6 +61,12 @@ PERSONA_DEFAULTS = {
     "traits": {axis: 0.0 for axis in ("time_horizon", "tech_attitude", "scale", "sociality", "risk", "rationality")},
     "lineage": {"generation": 0, "designed_by": [], "replaces": None},
 }
+
+
+def same_idea(a: str | None, b: str | None) -> bool:
+    """Two texts that are mostly the same words, like a reply's idea repeated as the turn's twist."""
+    wa, wb = set(re.findall(r"[a-z]+", (a or "").lower())), set(re.findall(r"[a-z]+", (b or "").lower()))
+    return bool(wa and wb) and len(wa & wb) / min(len(wa), len(wb)) > 0.8
 
 
 def load_persona(raw: dict) -> dict:
@@ -84,6 +92,8 @@ class Character:
         self.rng = random.Random(f"{run_id}:{self.id}")
 
         self.memory = MemoryStream()
+        self.social = Ledger()
+        self.heard_from: set[str] = set()  # peers who sent anything since the last turn
         self.seed: str | None = None
         self.constraints: list[str] = []
         self.branches: dict[str, dict] = {}
@@ -94,6 +104,7 @@ class Character:
         self.dead: set[str] = set()
 
         self.inbox: list[dict] = []  # waking messages the next decision call answers
+        self.built_this_turn: list[dict] = []  # branches this turn's replies made
         self.designs: deque[dict] = deque()  # replacement work, done before the next decision
         self.drafts_seen: set[str] = set()  # replacements whose draft reached us
         self.pending_reviews: list[dict] = []  # newcomers waiting on a human after a failed content check
@@ -233,13 +244,18 @@ class Character:
             self.on_world_event(body)
         elif kind in (IDEA_SHARE, IDEA_PITCH, MERGE_PROPOSE):
             branch = self.learn(body.get("branch"))
+            bid = branch["branch_id"] if branch else None
+            self.heard_from.add(sender)
             if kind == IDEA_SHARE:
-                self.memory.add(f'{who} shared {self.ref(branch)} with you. Note: "{clip(body.get("note"), 80)}"', "heard_idea")
+                self.memory.add(f'{who} shared {self.ref(branch)} with you. Note: "{clip(body.get("note"), 80)}"', "heard_idea", about=(sender, bid))
+                self.tie_note(sender, f"they showed you {self.ref(branch)}: {quote(body.get('note'))}")
             elif kind == IDEA_PITCH:
-                self.memory.add(f'{who} pitched {self.ref(branch)} to you: "{clip(body.get("note"), 80)}"', "pitch")
+                self.memory.add(f'{who} pitched {self.ref(branch)} to you: "{clip(body.get("note"), 80)}"', "pitch", about=(sender, bid))
+                self.tie_note(sender, f"they pitched {self.ref(branch)} to you: {quote(body.get('note'))}")
             else:
                 a, b = (body.get("branch_ids") or ["?", "?"])[:2]
-                self.memory.add(f'{who} offered to merge {a} and {b} into: "{clip(body.get("text"), 80)}"', "merge")
+                self.memory.add(f'{who} offered to merge {a} and {b} into: "{clip(body.get("text"), 80)}"', "merge", about=(sender, a, b))
+                self.tie_note(sender, f'they offered to merge {a} and {b} into "{clip(body.get("text"), 100)}": {quote(body.get("note"))}')
             self.inbox.append(env)
             self.wake.set()
         elif kind in (REPLACE_REQUEST, PERSONA_DRAFT):
@@ -248,36 +264,69 @@ class Character:
                 self.drafts_seen.add(body.get("replaces"))
             self.wake.set()
         elif kind == IDEA_REACTION:
-            self.memory.add(f'{who} reacted to your {body.get("branch_id")}: {body.get("answer")}, "{clip(body.get("text"), 100)}"', "reaction")
+            built = self.learn(body.get("branch"))
+            bid = body.get("branch_id")
+            verdict = "accepted it" if body.get("answer") == "accept" else "rejected it"
+            if built:
+                verdict += f" and built on it as {self.ref(built)}"
+                self.social.tie(sender).they_built += 1
+            self.social.answer(sender, mine=True, yes=body.get("answer") == "accept")
+            self.memory.add(f'{who} reacted to your {bid}: {verdict}, "{clip(body.get("text"), 100)}"', "reaction", about=(sender, bid, built and built["branch_id"]))
+            self.tie_note(sender, f"they {verdict.replace('it', 'your ' + str(bid), 1)}: {quote(body.get('text'))}")
+            self.answered(sender)
         elif kind == PITCH_RESPONSE:
+            built = self.learn(body.get("branch"))
+            bid = body.get("branch_id")
             verdict = "persuaded" if body.get("persuaded") else "not persuaded"
-            self.memory.add(f'{who} was {verdict} by your pitch for {body.get("branch_id")}: "{clip(body.get("text"), 100)}"', "reaction")
+            if built:
+                verdict += f", and built on it as {self.ref(built)}"
+                self.social.tie(sender).they_built += 1
+            self.social.answer(sender, mine=True, yes=bool(body.get("persuaded")))
+            self.memory.add(f'{who} was {verdict} by your pitch for {bid}: "{clip(body.get("text"), 100)}"', "reaction", about=(sender, bid, built and built["branch_id"]))
+            self.tie_note(sender, f"your pitch for {bid}: they were {verdict}: {quote(body.get('text'))}")
+            self.answered(sender)
         elif kind == MERGE_RESPONSE:
             branch = self.learn(body.get("branch"))
             answer = body.get("answer")
             result = f", making {branch['branch_id']}" if branch else ""
-            self.memory.add(f'{who} answered your merge offer: {answer}{result}. "{clip(body.get("text"), 100)}"', "merge")
+            self.social.answer(sender, mine=True, yes=answer in ("accept", "counter"))
+            self.memory.add(f'{who} answered your merge offer: {answer}{result}. "{clip(body.get("text"), 100)}"', "merge", about=(sender, branch and branch["branch_id"]))
+            self.tie_note(sender, f"they answered your merge offer: {answer}{result}: {quote(body.get('text'))}")
+            self.answered(sender)
+        elif kind == IDEA_BUILT:
+            branch = self.learn(body.get("branch"))
+            if branch:
+                parent = body.get("parent_id")
+                self.social.tie(sender).they_built += 1
+                self.memory.add(f"{who} built on your {parent}: {self.ref(branch)}", "heard_idea", about=(sender, parent, branch["branch_id"]))
+                self.tie_note(sender, f"they built on your {parent}: {self.ref(branch)}")
+                self.answered(sender)
         elif kind == ENDORSE:
             branch = self.learn(body.get("branch"))
             branch_id = branch["branch_id"] if branch else body.get("branch_id")
             if branch_id:
                 self.public_endorse(sender, branch_id)
-                self.memory.add(f"{who} now backs {self.ref(self.branches.get(branch_id)) or branch_id}", "endorsement")
+                self.memory.add(f"{who} now backs {self.ref(self.branches.get(branch_id)) or branch_id}", "endorsement", about=(sender, branch_id))
+                if self.id in (self.branches.get(branch_id) or {}).get("authors", []):
+                    self.tie_note(sender, f"they publicly backed your {branch_id}")
         elif kind == UNENDORSE:
             branch_id = body.get("branch_id")
             if branch_id:
                 self.public_unendorse(sender, branch_id)
                 reason = f': "{clip(body.get("reason"), 80)}"' if body.get("reason") else ""
-                self.memory.add(f"{who} dropped {branch_id}{reason}", "endorsement")
+                self.memory.add(f"{who} dropped {branch_id}{reason}", "endorsement", about=(sender, branch_id))
         elif kind == OBJECTION:
-            self.memory.add(f'{who} objected to {body.get("branch_id")}: "{clip(body.get("reason"), 100)}"', "objection")
+            branch_id = body.get("branch_id")
+            self.memory.add(f'{who} objected to {branch_id}: "{clip(body.get("reason"), 100)}"', "objection", about=(sender, branch_id))
+            if self.id in (self.branches.get(branch_id) or {}).get("authors", []):
+                self.tie_note(sender, f"they publicly objected to your {branch_id}: {quote(body.get('reason'))}")
         elif kind == AGENT_HELLO:
             replaces = body.get("replaces")
             note = f", replacing {self.name_of(replaces)}" if replaces else ""
             self.memory.add(f"{body.get('name') or who} joined the town{note}: {clip(body.get('one_liner'), 100)}", "hello")
         elif kind == AGENT_LAST_WORDS:
             self.mark_dead(sender)
-            self.memory.add(f'{who} died. Last words: "{clip(body.get("text"), 150)}"', "death")
+            self.memory.add(f'{who} died. Last words: "{clip(body.get("text"), 150)}"', "death", about=(sender,))
         elif kind == SPAWN_RESULT:
             if not body.get("ok"):
                 log.warning("the world couldn't start a newcomer: %s", body.get("error"))
@@ -333,7 +382,20 @@ class Character:
         if not isinstance(branch, dict) or not branch.get("branch_id") or not branch.get("text"):
             return None
         self.branches.setdefault(branch["branch_id"], dict(branch))
+        for author in branch.get("authors") or []:
+            if author != self.id:
+                self.social.their_idea(author, branch["branch_id"])
         return self.branches[branch["branch_id"]]
+
+    def tie_note(self, peer: str | None, line: str) -> None:
+        self.social.note(peer, self.memory.step, line)
+
+    def answered(self, sender: str | None) -> None:
+        """An answer or a credit came back. With threads on, it wakes us so the exchange can continue."""
+        self.heard_from.add(sender)
+        if config.on("threads"):
+            self.news = True
+            self.wake.set()
 
     def ref(self, branch: dict | None) -> str:
         """How memories mention a branch: its id and a short excerpt. The full text is in the branches section."""
@@ -397,8 +459,29 @@ class Character:
             "endorsements": {a: ids for a, ids in self.endorsements.items() if a in living and ids},
         }
 
+    def focus(self, inbox: list[dict]) -> tuple[set[str], set[str], str]:
+        """Who and what this turn is about: peers who wrote since the last turn, the branches in the inbox,
+        the ones we back and the agenda. Retrieval scores memories by overlap with it."""
+        peers = {p for p in self.heard_from if p}
+        branches = set(self.my_endorsed)
+        texts = [self.agenda]
+        for env in inbox:
+            body = env.get("body") or {}
+            peers.add(env.get("from"))
+            branches.add((body.get("branch") or {}).get("branch_id"))
+            branches.update(body.get("branch_ids") or [])
+            texts += [body.get("note") or "", body.get("text") or "", (body.get("branch") or {}).get("text") or ""]
+        branches.update(re.findall(r"br_[0-9a-f]{6}", self.agenda))
+        return {p for p in peers if p}, {b for b in branches if b}, " ".join(texts)
+
     def view(self, peers: list[dict], inbox: list[dict], idle: bool) -> View:
         to_score = self.memory.unscored()
+        focus_peers, focus_branches, query = self.focus(inbox)
+        exclude = {o.id for o in to_score}
+        if config.on("relevance"):
+            memories = self.memory.retrieve(exclude=exclude, focus=focus_peers | focus_branches, query=query)
+        else:
+            memories = self.memory.retrieve(exclude=exclude)
         return View(
             me=self.persona,
             seed=self.seed,
@@ -411,10 +494,12 @@ class Character:
             peers=peers,
             endorsements={a: list(ids) for a, ids in self.endorsements.items()},
             branches=self.branches,
-            memories=self.memory.retrieve(exclude={o.id for o in to_score}),
+            memories=memories,
             inbox=inbox,
             to_score=to_score,
             idle=idle,
+            ledger=self.social,
+            focus=focus_peers,
         )
 
     # -- talking ----------------------------------------------------------
@@ -503,9 +588,10 @@ class Character:
             "memories": len(view.memories), "new_obs": len(view.to_score), "waking": len(inbox),
             "branches": len(brain.pick_branches(view)), "idle": idle,
         }
+        self.heard_from = set()
         try:
             result = await self.think(
-                "decision", brain.decision_prompt(view), Decision, lambda: brain.mock_decision(view, self.rng), counts
+                "decision", brain.decision_prompt(view), brain.decision_model(), lambda: brain.mock_decision(view, self.rng), counts
             )
         except LLMError:
             return
@@ -552,25 +638,37 @@ class Character:
         })
 
         by_msg = {env.get("msg_id"): env for env in inbox}
+        self.built_this_turn = []
         for reply in d.replies:
             if reply.msg_id in by_msg:
                 await self.reply(by_msg.pop(reply.msg_id), reply)
 
-        if action == "twist":
+        repeat = next((b for b in self.built_this_turn if same_idea(b["text"], d.text)), None) if action == "twist" else None
+        if repeat:
+            # The twist repeats an idea a reply already made into a branch, so show that branch instead.
+            if send_to and send_to not in repeat.get("_sent_to", ()):
+                self.tie_note(send_to, f"you showed them {self.ref(repeat)}: {quote(d.note)}")
+                await self.send(send_to, IDEA_SHARE, {"branch": {k: v for k, v in repeat.items() if k != "_sent_to"}, "note": clip(d.note, 200)})
+        elif action == "twist":
             branch = self.new_branch("twist", [target], [self.id], d.text)
-            self.memory.add(f"You twisted {target} into {self.ref(branch)}", "action")
+            self.memory.add(f"You twisted {target} into {self.ref(branch)}", "action", about=(target, branch["branch_id"], send_to))
+            await self.credit(target, branch, skip=send_to)
             if send_to:
+                self.tie_note(send_to, f"you showed them {self.ref(branch)}: {quote(d.note)}")
                 await self.send(send_to, IDEA_SHARE, {"branch": branch, "note": clip(d.note, 200)})
         elif action == "merge":
             proposal = {"proposal_id": f"mp_{uuid.uuid4().hex[:8]}", "branch_ids": [target, other], "text": clip(d.text, config.BRANCH_TEXT_MAX), "note": clip(d.note, 200)}
-            self.memory.add(f"You offered {self.name_of(send_to)} a merge of {target} and {other}", "action")
+            self.memory.add(f"You offered {self.name_of(send_to)} a merge of {target} and {other}", "action", about=(send_to, target, other))
+            self.tie_note(send_to, f'you offered to merge {target} and {other} into "{clip(d.text, 100)}": {quote(d.note)}')
             await self.send(send_to, MERGE_PROPOSE, proposal)
-        elif action == "back":
-            await self.endorse(target, d.reason)
+        public = d.note if config.on("think") and (d.note or "").strip() else d.reason  # reason is private thinking
+        if action == "back":
+            await self.endorse(target, public)
         elif action == "trash":
-            await self.trash(target, d.reason)
+            await self.trash(target, public)
         elif action == "pitch":
-            self.memory.add(f"You pitched {target} to {self.name_of(send_to)}", "action")
+            self.memory.add(f"You pitched {target} to {self.name_of(send_to)}", "action", about=(send_to, target))
+            self.tie_note(send_to, f"you pitched {self.ref(self.branches[target])} to them: {quote(d.note)}")
             await self.send(send_to, IDEA_PITCH, {"branch": self.branches[target], "note": clip(d.note, 200)})
 
         for branch_id in d.unendorse:
@@ -578,7 +676,7 @@ class Character:
                 await self.unendorse(branch_id, "")
         for branch_id in d.endorse:
             if branch_id in self.branches:
-                await self.endorse(branch_id, d.reason)
+                await self.endorse(branch_id, public)
 
         if d.flag_human and d.flag_human.branch_id in self.branches:
             world = await self.world_id()
@@ -587,6 +685,19 @@ class Character:
                 body = {"kind": flag.kind, "branch_id": flag.branch_id, "branch": self.branches[flag.branch_id], "claim": clip(flag.claim, 300)}
                 await self.send(world, HUMAN_REQUEST, body, observe=False)
                 self.memory.add(f"You asked a human to rule on {flag.branch_id}: {clip(flag.claim, 100)}", "action")
+
+    async def credit(self, parent_id: str | None, branch: dict, skip: str | None = None) -> None:
+        """We built on someone else's branch. With credit on, its living authors hear about it."""
+        parent = self.branches.get(parent_id) or {}
+        for author in parent.get("authors") or []:
+            if author == self.id or author in self.dead or author not in self.known:
+                continue  # the seed's author is the world, not a character
+            self.social.tie(author).you_built += 1
+            if author == skip:
+                continue  # they're about to get the branch itself
+            self.tie_note(author, f"you built on their {parent_id}: {self.ref(branch)}")
+            if config.on("credit"):
+                await self.send(author, IDEA_BUILT, {"branch": branch, "parent_id": parent_id})
 
     def new_branch(self, op: str, parents: list[str], authors: list[str], text: str) -> dict:
         branch = {
@@ -607,20 +718,37 @@ class Character:
         sender = env.get("from")
         kind = env.get("type")
         branch_id = (body.get("branch") or {}).get("branch_id")
-        if kind == IDEA_SHARE:
-            answer = "accept" if r.answer == "accept" else "reject"
-            await self.send(sender, IDEA_REACTION, {"branch_id": branch_id, "answer": answer, "text": clip(r.text, 200)})
-        elif kind == IDEA_PITCH:
-            await self.send(sender, PITCH_RESPONSE, {"branch_id": branch_id, "persuaded": r.answer == "accept", "text": clip(r.text, 200)})
+        idea = (r.idea or "").strip()
+        if kind in (IDEA_SHARE, IDEA_PITCH):
+            built = None
+            if idea and branch_id in self.branches:
+                # Their idea sparked one of ours: a twist of their branch, sent back with the answer.
+                built = self.new_branch("twist", [branch_id], [self.id], idea)
+                self.built_this_turn.append({**built, "_sent_to": (sender,)})
+                self.social.tie(sender).you_built += 1
+                self.memory.add(f"You built on {self.name_of(sender)}'s {branch_id}: {self.ref(built)}", "action", about=(sender, branch_id, built["branch_id"]))
+            yes = r.answer in ("accept", "counter")
+            self.social.answer(sender, mine=False, yes=yes)
+            verdict = f"{'accepted' if yes else 'rejected'} their {branch_id}"
+            if built:
+                verdict += f" and built on it as {self.ref(built)}"
+            self.tie_note(sender, f"you {verdict}: {quote(r.text)}")
+            if kind == IDEA_SHARE:
+                await self.send(sender, IDEA_REACTION, {"branch_id": branch_id, "answer": "accept" if yes else "reject", "text": clip(r.text, 200), "branch": built})
+            else:
+                await self.send(sender, PITCH_RESPONSE, {"branch_id": branch_id, "persuaded": yes, "text": clip(r.text, 200), "branch": built})
         elif kind == MERGE_PROPOSE:
             branch = None
             if r.answer in ("accept", "counter"):
-                text = r.text if r.answer == "counter" and (r.text or "").strip() else body.get("text", "")
+                text = idea if r.answer == "counter" and idea else body.get("text", "")
                 parents = [b for b in body.get("branch_ids") or [] if b]
                 branch = self.new_branch("merge", parents, [sender, self.id], text)
-                self.memory.add(f"You and {self.name_of(sender)} merged {' and '.join(parents)} into {self.ref(branch)}", "action")
+                self.memory.add(f"You and {self.name_of(sender)} merged {' and '.join(parents)} into {self.ref(branch)}", "action", about=(sender, branch["branch_id"]))
+            answer = r.answer
+            self.social.answer(sender, mine=False, yes=branch is not None)
+            self.tie_note(sender, f"you answered their merge offer: {answer}{', making ' + branch['branch_id'] if branch else ''}: {quote(r.text)}")
             await self.send(sender, MERGE_RESPONSE, {
-                "proposal_id": body.get("proposal_id"), "answer": r.answer, "text": clip(r.text, 200), "branch": branch,
+                "proposal_id": body.get("proposal_id"), "answer": answer, "text": clip(r.text, 200), "branch": branch,
             })
 
     async def endorse(self, branch_id: str, reason: str) -> None:
@@ -631,7 +759,10 @@ class Character:
         self.my_endorsed.append(branch_id)
         self.endorsements[self.id] = list(self.my_endorsed)
         self.support_changed()
-        self.memory.add(f"You backed {self.ref(self.branches[branch_id])}", "action")
+        self.memory.add(f"You backed {self.ref(self.branches[branch_id])}", "action", about=(branch_id,))
+        for author in self.branches[branch_id].get("authors") or []:
+            if author != self.id:
+                self.tie_note(author, f"you publicly backed their {branch_id}")
         self.emit(ENDORSE, {"branch_id": branch_id, "reason": clip(reason, 200)})
         await self.broadcast(ENDORSE, {"branch": self.branches[branch_id], "reason": clip(reason, 200)})
 
@@ -647,7 +778,10 @@ class Character:
     async def trash(self, branch_id: str, reason: str) -> None:
         if branch_id in self.my_endorsed:
             await self.unendorse(branch_id, "")
-        self.memory.add(f"You objected to {self.ref(self.branches[branch_id])}", "action")
+        self.memory.add(f"You objected to {self.ref(self.branches[branch_id])}", "action", about=(branch_id,))
+        for author in self.branches[branch_id].get("authors") or []:
+            if author != self.id:
+                self.tie_note(author, f"you publicly objected to their {branch_id}: {quote(reason)}")
         self.emit(OBJECTION, {"branch_id": branch_id, "reason": clip(reason, 200)})
         await self.broadcast(OBJECTION, {"branch_id": branch_id, "reason": clip(reason, 200)})
 
@@ -658,15 +792,39 @@ class Character:
         self.memory.reflected()  # even if the call fails, so it doesn't retry every turn
         try:
             result = await self.think(
-                "reflection", brain.reflection_prompt(view, recent), brain.Reflection, lambda: brain.mock_reflection(view, self.rng)
+                "reflection", brain.reflection_prompt(view, recent), brain.reflection_model(),
+                lambda: brain.mock_reflection(view, self.rng, recent),
             )
         except LLMError:
             return
-        insights = [clip(i, 300) for i in result.value.insights[:3] if i.strip()]
-        for insight in insights:
-            self.memory.add(insight, "reflection", importance=8)
+        if config.on("reflect"):
+            # An insight has to rest on memories it was shown, or it's dropped (the paper's citations).
+            real = {m.id: m for m in self.memory.items}
+            insights, dropped = [], 0
+            for insight in result.value.insights[:3]:
+                cited = [real[e] for e in (x.strip(" []") for x in insight.evidence) if e in real]
+                if not cited or not insight.text.strip():
+                    dropped += 1
+                    continue
+                insights.append(clip(insight.text, 300))
+                about = set().union(*(m.about for m in cited))
+                self.memory.add(insights[-1], "reflection", importance=8, about=about)
+            living = {p["id"] for p in peers}
+            for imp in result.value.impressions:
+                if imp.peer_id in living and imp.impression.strip():
+                    self.social.tie(imp.peer_id).impression = clip(imp.impression, 160)
+                    self.memory.add(f"Your impression of {self.name_of(imp.peer_id)}: {clip(imp.impression, 160)}", "reflection", importance=7, about=(imp.peer_id,))
+            if dropped:
+                self.emit("reflection.dropped", {"insights": dropped, "why": "no valid evidence"})
+        else:
+            insights = [clip(i, 300) for i in result.value.insights[:3] if i.strip()]
+            for insight in insights:
+                self.memory.add(insight, "reflection", importance=8)
         self.agenda = clip(result.value.agenda, 300)
-        self.emit("agent.reflection", {"insights": insights, "agenda": self.agenda})
+        impressions = [
+            {"peer_id": i.peer_id, "impression": clip(i.impression, 160)} for i in getattr(result.value, "impressions", [])
+        ]
+        self.emit("agent.reflection", {"insights": insights, "agenda": self.agenda, "impressions": impressions})
 
     async def maybe_rest(self) -> None:
         """Broadcast rest once support has sat still long enough, and nothing is being designed."""
@@ -685,6 +843,7 @@ class Character:
     async def die(self) -> None:
         if not self.alive:
             return
+        await self.finish_designs()  # others are counting on design work we were handed
         peers = await self.living_peers()
         view = self.view(peers, [], False)
         try:
@@ -698,10 +857,17 @@ class Character:
         self.emit(AGENT_LAST_WORDS, {"text": words})
         await self.broadcast(AGENT_LAST_WORDS, {"text": words})
         picked = await self.pick_designers(exclude={self.id}, include_me=False, peers=peers)
+        if not picked:
+            picked = [self.id]  # nobody is left to design a successor, so the town would end here
         generation = self.persona.get("lineage", {}).get("generation", 0) + 1
         await self.request_replacement(self.id, self.name, picked, generation)
+        await self.finish_designs()
         self.emit("agent.died", {"picked": picked})
         self.done.set()
+
+    async def finish_designs(self) -> None:
+        while self.designs:
+            await self.design(self.designs.popleft())
 
     async def pick_designers(self, exclude: set[str], include_me: bool, peers: list[dict] | None = None) -> list[str]:
         """Three random survivors. The first proposes, the next two refine, in that order."""
@@ -751,14 +917,30 @@ class Character:
 
     async def propose(self, body: dict, next_step: int) -> None:
         town = await self.design_town()
-        result = await self.think(
-            "propose",
-            replace.propose_prompt(self.persona, town, body["replaces_name"], body.get("briefing") or {}),
-            replace.PersonaDraft,
-            lambda: replace.mock_propose(town, self.rng),
-        )
+        taken = target = None
+        if config.on("design"):
+            taken = sorted({p.get("name") for p in [*self.known.values(), self.persona] if p.get("name")})
+            target = replace.empty_corner(town, self.rng)
+        if config.on("design"):
+            result = await self.think(
+                "propose",
+                replace.propose_prompt(self.persona, town, body["replaces_name"], body.get("briefing") or {}, taken, target),
+                replace.Proposal,
+                lambda: replace.Proposal(concepts=["a", "b", "c"], names=[], draft=replace.mock_propose(town, self.rng)),
+            )
+            draft = result.value.draft
+            body = {**body, "names": [n for n in result.value.names if n][:5]}
+            draft.name = replace.free_name(draft.name, body["names"], taken)
+        else:
+            result = await self.think(
+                "propose",
+                replace.propose_prompt(self.persona, town, body["replaces_name"], body.get("briefing") or {}),
+                replace.PersonaDraft,
+                lambda: replace.mock_propose(town, self.rng),
+            )
+            draft = result.value
         persona = replace.to_persona(
-            result.value, model=self.newcomer_model(), replaces=body["replaces"], designers=body["order"], generation=body["generation"],
+            draft, model=self.newcomer_model(), replaces=body["replaces"], designers=body["order"], generation=body["generation"],
         )
         self.life_left -= 1
         self.drafts_seen.add(body["replaces"])
@@ -769,9 +951,13 @@ class Character:
     async def refine(self, body: dict) -> None:
         draft = body["draft"]
         town = await self.design_town(exclude=draft.get("id"))
+        feedback = None
+        if config.on("design"):
+            people = [p for p in [*self.known.values(), self.persona] if p.get("id") != draft.get("id")]
+            feedback = replace.gaps_feedback(draft, people, sorted({p.get("name") for p in people if p.get("name")}))
         result = await self.think(
             "refine",
-            replace.refine_prompt(self.persona, draft, town, body["replaces_name"], body.get("changes") or []),
+            replace.refine_prompt(self.persona, draft, town, body["replaces_name"], body.get("changes") or [], feedback),
             replace.Refined,
             lambda: replace.mock_refine(draft, town, self.rng),
         )
@@ -794,6 +980,7 @@ class Character:
             payload = {
                 "replaces": body["replaces"], "replaces_name": body["replaces_name"], "order": order, "step": i,
                 "generation": body["generation"], "draft": persona, "changes": changes, "briefing": body.get("briefing") or {},
+                "names": body.get("names") or [],
             }
             if await self.send(order[i], PERSONA_DRAFT, payload):
                 return
@@ -813,6 +1000,10 @@ class Character:
         self.wake.set()
 
     async def birth(self, persona: dict, body: dict) -> None:
+        if config.on("design"):
+            # Refiners may have renamed it into a clash. The proposer's other names are the way out.
+            taken = sorted({p.get("name") for p in self.known.values() if p.get("name") and p.get("id") != persona.get("id")} | {self.name})
+            persona = {**persona, "name": replace.free_name(persona["name"], body.get("names") or [], taken)}
         try:
             validate_persona(persona)
         except ValidationError as exc:

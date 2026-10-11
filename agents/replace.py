@@ -8,6 +8,7 @@ messaging (replace.request, persona.draft, spawn.request).
 from __future__ import annotations
 
 import random
+import re
 from typing import Literal
 
 from pydantic import BaseModel, Field
@@ -38,6 +39,20 @@ class PersonaDraft(BaseModel):
     traits: DraftTraits
 
 
+class Proposal(BaseModel):
+    concepts: list[str] = Field(description="Three newcomer concepts from walks of life far apart from each other and from the town, one line each")
+    names: list[str] = Field(description="Five possible full names for the newcomer, unlike each other and unlike the names already used")
+    draft: PersonaDraft = Field(description="The full persona for the concept least like anyone in town")
+
+
+def free_name(name: str, options: list[str], taken: list[str]) -> str:
+    """The draft's name if nobody has used any part of it yet, else the first option that's free."""
+    for candidate in [name, *options]:
+        if candidate and candidate.strip() and not name_clash(candidate, taken):
+            return clip(candidate.strip(), 80)
+    return name
+
+
 class Refined(BaseModel):
     draft: PersonaDraft
     change: str = Field(description="The one change you made, in one line")
@@ -51,26 +66,82 @@ class ContentCheck(BaseModel):
 DESIGN_RULES = """A good character has a strong worldview with values that are coherent and clash with the rest of the town, never random jokes. Joke characters produce gimmicky ideas. Give them an ordinary or unusual job, an era or a place, and an obsession that shapes how they judge every idea. Never base a character on a real person, and never build one on a caricature of race, religion, ethnicity, gender, sexuality, disability or any other protected trait. Traits run from -1 to 1."""
 
 
+_STOP = set("the and for with that this who their they them from into every anything everything nothing what only".split())
+
+
+def persona_words(p: dict) -> set[str]:
+    text = " ".join([p.get("one_liner", ""), p.get("worldview", ""), *p.get("loves", []), *p.get("hates", [])])
+    return {w for w in re.findall(r"[a-z]{4,}", text.lower()) if w not in _STOP}
+
+
+def echoes(draft: dict, people: list[dict]) -> tuple[dict | None, list[str]]:
+    """The person whose one-liner, worldview, loves and hates share the most words with the draft."""
+    mine = persona_words(draft)
+    best, shared = None, set()
+    for p in people:
+        both = mine & persona_words(p)
+        if len(both) > len(shared):
+            best, shared = p, both
+    return best, sorted(shared)
+
+
+def name_clash(name: str, taken: list[str]) -> str | None:
+    """A taken name that shares a first or last name with this one."""
+    parts = {w.lower() for w in name.split() if len(w) > 2}
+    return next((t for t in taken if parts & {w.lower() for w in t.split() if len(w) > 2}), None)
+
+
+def gaps_feedback(draft: dict, people: list[dict], taken: list[str]) -> str:
+    """What code can see is too close to someone already in town, for the next designer to fix."""
+    lines = []
+    clash = name_clash(draft.get("name", ""), [t for t in taken if t != draft.get("name")])
+    if clash:
+        lines.append(f"The name {draft['name']} shares a name with {clash}, who already lived in this town. Change it.")
+    echo, shared = echoes(draft, [p for p in people if p.get("id") != draft.get("id")])
+    if echo and len(shared) >= 3:
+        lines.append(f"The draft reads a lot like {echo['name']} ({echo.get('one_liner')}): both talk about {', '.join(shared[:6])}. Move it away from that.")
+    return "\n".join(lines) or "Nothing in the town reads like this draft yet."
+
+
 def town_lines(personas: list[dict]) -> str:
     return "\n".join(f"- {persona_summary(p)}" for p in personas) or "- nobody"
 
 
-def propose_prompt(me: dict, town: list[dict], replaces_name: str, briefing: dict) -> tuple[list[Section], list[Section]]:
+def empty_corner(town: list[dict], rng: random.Random, samples: int = 3000) -> dict:
+    """The point in trait space farthest from every living character, by sampling."""
+    best, best_d = {axis: 0.0 for axis in TRAIT_AXES}, -1.0
+    for _ in range(samples):
+        point = {axis: round(rng.uniform(-1, 1), 1) for axis in TRAIT_AXES}
+        d = nearest(point, town)[1] if town else 0.0
+        if d > best_d:
+            best, best_d = point, d
+    return best
+
+
+def propose_prompt(
+    me: dict, town: list[dict], replaces_name: str, briefing: dict,
+    taken: list[str] | None = None, target: dict | None = None,
+) -> tuple[list[Section], list[Section]]:
     task = (
         f"{replaces_name} has died, and you were picked to propose their replacement. "
         "Design a newcomer who is as unlike everyone living in the town as possible, yourself included, "
         "so the town keeps hearing new perspectives. Write the full persona."
     )
-    return system_sections(me), [
+    sections = [
         Section("world", f"Seed idea the town is working on: {briefing.get('seed') or '(unknown)'}"),
         Section("town", "The living town:\n" + town_lines(town)),
-        Section("design_rules", DESIGN_RULES),
-        Section("task", task),
     ]
+    if taken is not None and target is not None:
+        corner = ", ".join(f"{axis} {target[axis]:+.1f}" for axis in TRAIT_AXES)
+        sections.append(Section("gaps", (
+            f"Names already used in this town, living or dead: {', '.join(taken) or 'none'}. Pick a name that shares no part with them.\n"
+            f"Nobody in town sits near these traits: {corner}. Design the newcomer for them."
+        )))
+    return system_sections(me), sections + [Section("design_rules", DESIGN_RULES), Section("task", task)]
 
 
 def refine_prompt(
-    me: dict, draft: dict, town: list[dict], replaces_name: str, changes: list[str]
+    me: dict, draft: dict, town: list[dict], replaces_name: str, changes: list[str], feedback: str | None = None
 ) -> tuple[list[Section], list[Section]]:
     closest, distance = nearest(draft["traits"], town)
     closest_line = (
@@ -84,12 +155,13 @@ def refine_prompt(
         f"worldview, and return the whole revised persona. {closest_line} Keep it coherent."
     )
     shown = {k: draft[k] for k in ("name", "one_liner", "worldview", "loves", "hates", "red_line", "voice", "traits")}
-    return system_sections(me), [
+    sections = [
         Section("town", "The living town:\n" + town_lines(town)),
         Section("draft", f"The draft so far: {shown}\nChanges made so far:\n{earlier}"),
-        Section("design_rules", DESIGN_RULES),
-        Section("task", task),
     ]
+    if feedback:
+        sections.append(Section("gaps", feedback))
+    return system_sections(me), sections + [Section("design_rules", DESIGN_RULES), Section("task", task)]
 
 
 def content_check_prompt(persona: dict) -> tuple[list[Section], list[Section]]:

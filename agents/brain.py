@@ -19,14 +19,15 @@ import random
 from dataclasses import dataclass, field
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, create_model
 
 from agents import config
 from agents.llm import Section
 from agents.memory import Observation
+from agents.social import Ledger
 from agents.messages import IDEA_PITCH, IDEA_SHARE, MERGE_PROPOSE
 
-RULES = """You are one character in Oddtown, a town of AI characters with clashing worldviews who argue over how to twist one seed idea into something more creative. Ideas spread only by gossip between characters. Nobody runs the town and nobody owns the idea. When a character dies, three survivors design its replacement, so nobody holds the idea forever.
+RULES_V1 = """You are one character in Oddtown, a town of AI characters with clashing worldviews who argue over how to twist one seed idea into something more creative. Ideas spread only by gossip between characters. Nobody runs the town and nobody owns the idea. When a character dies, three survivors design its replacement, so nobody holds the idea forever.
 
 Each turn you take exactly one action:
 - twist: rewrite `target_branch` into a new version through your worldview. Put the new version in `text`, and say who to share it with in `send_to`.
@@ -50,6 +51,33 @@ Rules:
 - Set `flag_human` only when a branch breaks a hard rule of the seed (law, physics, budget) or two sides dispute a fact that can't be settled by argument. Otherwise leave it null.
 - Use only branch ids and character ids that appear in this prompt. Leave fields that don't apply to your action null."""
 
+RULES = """You are one character in Oddtown, a town of AI characters, each with a strong worldview of their own, reshaping one seed idea. Ideas travel only person to person: you know a branch only if someone showed it to you. Nobody runs the town and nobody owns the idea. Characters die, and survivors design their replacements. When the town settles or time runs out, the branches with the most living backers become the town's answer, and the strongest public objection to each becomes its minority report.
+
+Each turn you take exactly one action:
+- twist: write a new version of `target_branch`, any branch you know, in `text`, and show it to `send_to`.
+- merge: offer `send_to` one idea combining `target_branch` and `other_branch`, written in `text`. It becomes a branch only if they accept.
+- back: publicly endorse `target_branch`, with why in `note`. You back at most 2 at a time, and a third drops your oldest.
+- trash: publicly object to `target_branch`, with the objection in `note`.
+- pitch: make the case for an existing `target_branch` to `send_to`, in `note`.
+- ignore: do nothing this turn.
+An idea of your own only travels as a branch, so a new idea goes in a twist (or a reply's `idea`), never only in a note.
+
+Answer every message under "Messages waiting for your reply", by its msg_id:
+- `answer`: accept if you like it, are persuaded, or take the merge as written; reject if you don't; counter, for merges only, to take the merge with your own wording in `idea`.
+- `text`: what you say back to them, in your voice.
+- `idea`: optional, whatever your answer. If their idea sparks a version of your own, write it here. It becomes a branch built on theirs, credited to you, and they see it with your answer. A reject with an idea is a counter-proposal.
+
+Writing:
+- `reason` is your private thinking for this turn, written first, in two to four sentences.
+- Branch text is one or two concrete sentences, under 200 characters. A new version changes how the idea works, not just its wording.
+- `say` is your speech bubble, under 100 characters, in your voice. `note` is your message to `send_to`.
+- Never back a branch that crosses your red line. Stay on the seed idea and every constraint the world added.
+- What you say about other characters and past conversations must match what's under "People" and in your memories.
+- Rate every observation under "New since your last turn" from 1 to 10 by how much it matters to you.
+- Use `endorse` and `unendorse` for any extra changes to what you back. Leave them empty if nothing changes.
+- Set `flag_human` only when a branch breaks a hard rule of the seed (law, physics, budget) or two sides dispute a fact that argument can't settle.
+- Use only branch ids and character ids that appear in this prompt. Leave fields that don't apply null."""
+
 
 # -- output schemas -----------------------------------------------------------
 
@@ -57,7 +85,18 @@ Rules:
 class Reply(BaseModel):
     msg_id: str
     answer: Literal["accept", "reject", "counter"]
+    text: str = Field(description="What you say back to them")
+    idea: str | None = Field(description="Your own version their idea sparked, or your merge wording for counter. Null if none")
+
+
+class ReplyV1(BaseModel):
+    msg_id: str
+    answer: Literal["accept", "reject", "counter"]
     text: str = Field(description="Your reason, or your merged wording when you counter")
+
+    @property
+    def idea(self) -> str | None:
+        return self.text if self.answer == "counter" else None
 
 
 class Score(BaseModel):
@@ -72,6 +111,7 @@ class HumanFlag(BaseModel):
 
 
 class Decision(BaseModel):
+    reason: str = Field(description="Your private thinking for this turn, before you decide, in two to four sentences")
     replies: list[Reply]
     importance: list[Score]
     action: Literal["twist", "merge", "back", "trash", "pitch", "ignore"]
@@ -83,13 +123,45 @@ class Decision(BaseModel):
     endorse: list[str]
     unendorse: list[str]
     flag_human: HumanFlag | None
-    reason: str
     say: str = Field(description="Speech bubble, under 100 characters")
 
 
+def decision_model() -> type[BaseModel]:
+    """The decision schema for the switched-on mechanisms. Field order is the order the model writes them in."""
+    if config.on("think") and config.on("build"):
+        return Decision
+    fields = {name: (f.annotation, f) for name, f in Decision.model_fields.items()}
+    if not config.on("build"):
+        fields["replies"] = (list[ReplyV1], Decision.model_fields["replies"])
+    if not config.on("think"):
+        fields = {k: v for k, v in fields.items() if k != "reason"} | {"reason": (str, Field())}
+        fields = {k: fields[k] for k in [*[k for k in fields if k not in ("reason", "say")], "reason", "say"]}
+    return create_model("Decision", **fields)
+
+
+class Insight(BaseModel):
+    text: str
+    evidence: list[str] = Field(description="Ids of the memories it rests on")
+
+
+class Impression(BaseModel):
+    peer_id: str
+    impression: str = Field(description="One line: what you make of them now")
+
+
 class Reflection(BaseModel):
+    insights: list[Insight] = Field(description="Two or three insights about the ideas and the other characters")
+    impressions: list[Impression] = Field(description="One for each character you've dealt with")
+    agenda: str = Field(description="The idea you want to push next, and whose help or opposition matters for it, one or two sentences")
+
+
+class ReflectionV1(BaseModel):
     insights: list[str] = Field(description="Two or three insights about the ideas and the other characters")
     agenda: str = Field(description="The branch you champion and who you want to win over, one or two sentences")
+
+
+def reflection_model() -> type[BaseModel]:
+    return Reflection if config.on("reflect") else ReflectionV1
 
 
 class LastWords(BaseModel):
@@ -118,6 +190,8 @@ class View:
     inbox: list[dict] = field(default_factory=list)  # waking envelopes that need a reply
     to_score: list[Observation] = field(default_factory=list)
     idle: bool = False
+    ledger: Ledger | None = None  # what passed between you and each peer
+    focus: set[str] = field(default_factory=set)  # peers this turn is about, shown with their full history
 
     def name(self, agent_id: str | None) -> str:
         if agent_id == self.me["id"]:
@@ -152,7 +226,7 @@ def persona_text(p: dict) -> str:
 
 
 def system_sections(me: dict) -> list[Section]:
-    return [Section("rules", RULES), Section("persona", persona_text(me))]
+    return [Section("rules", RULES if config.on("rules") else RULES_V1), Section("persona", persona_text(me))]
 
 
 def world_section(v: View) -> Section:
@@ -165,6 +239,10 @@ def world_section(v: View) -> Section:
     if v.agenda:
         lines.append(f"Your agenda: {v.agenda}")
     lines.append("You back: " + (", ".join(v.my_endorsed) if v.my_endorsed else "nothing yet"))
+    if config.on("rules"):
+        support = sorted(((len(v.backers(b)), b) for b in v.branches if v.backers(b)), reverse=True)[:3]
+        standing = ", ".join(f"{b} ({n} {'backer' if n == 1 else 'backers'})" for n, b in support)
+        lines.append("The town's answer right now, by living backers: " + (standing or "nothing is backed yet"))
     return Section("world", "\n".join(lines))
 
 
@@ -176,6 +254,35 @@ def town_section(v: View) -> Section:
     if not v.peers:
         lines.append("- nobody else")
     return Section("town", "\n".join(lines))
+
+
+FULL_HISTORY = 6  # exchanges shown for the peers a turn is about
+SHORT_HISTORY = 2  # for everyone else
+CLOSE_PEERS = 2  # peers with the most history also get it in full
+
+
+def people_section(v: View) -> Section:
+    """Every living peer, with the record of what passed between you. Replaces the town section."""
+    ledger = v.ledger or Ledger()
+    close = sorted(v.peers, key=lambda p: -ledger.closeness(p["id"]))[:CLOSE_PEERS]
+    full = v.focus | {p["id"] for p in close if ledger.closeness(p["id"])}
+    lines = ["People in town (what's recorded here is what actually happened):"]
+    for p in v.peers:
+        backs = ", ".join(v.endorsements.get(p["id"], [])) or "nothing"
+        lines.append(f"- {p['id']} {p['name']}: {p['one_liner']}. Backs {backs}.")
+        tie = ledger.ties.get(p["id"])
+        if tie and tie.ideas:
+            lines.append(f"  Their ideas you know: {', '.join(tie.ideas[-4:])}")
+        lines.append(f"  {ledger.summary(p['id'])}")
+        if tie and tie.impression:
+            lines.append(f'  Your impression of them: "{tie.impression}"')
+        history = ledger.recent(p["id"], FULL_HISTORY if p["id"] in full else SHORT_HISTORY)
+        if history:
+            lines.append("  Between you, newest last:")
+            lines += [f"    · {h}" for h in history]
+    if not v.peers:
+        lines.append("- nobody else")
+    return Section("people", "\n".join(lines))
 
 
 def pick_branches(v: View, limit: int = config.MAX_BRANCHES_IN_PROMPT) -> list[dict]:
@@ -213,6 +320,11 @@ def branches_section(v: View) -> Section:
             parents = " and ".join(b.get("parent_ids") or []) or "?"
             authors = ", ".join(v.name(a) for a in b.get("authors") or [])
             origin = f"{b['op']} of {parents} by {authors}"
+            parent_authors = {
+                a for pid in b.get("parent_ids") or [] for a in (v.branches.get(pid) or {}).get("authors") or []
+            } - set(b.get("authors") or [])
+            if parent_authors and config.on("credit"):
+                origin += f", building on {', '.join(v.name(a) for a in sorted(parent_authors))}"
         backers = ", ".join(v.name(a) for a in v.backers(b["branch_id"])) or "nobody"
         lines.append(f'- {b["branch_id"]} ({origin}; backed by {backers}): "{clip(b["text"], config.BRANCH_TEXT_MAX)}"')
     return Section("branches", "\n".join(lines))
@@ -250,7 +362,7 @@ def inbox_section(v: View) -> Section:
 
 
 def to_score_section(v: View) -> Section:
-    lines = ["New observations to rate:"]
+    lines = ["New since your last turn (rate each):" if config.on("rules") else "New observations to rate:"]
     lines += [f"[{o.id}] {o.text}" for o in v.to_score] or ["(none)"]
     return Section("to_score", "\n".join(lines))
 
@@ -269,7 +381,7 @@ def task_section(v: View) -> Section:
 def decision_prompt(v: View) -> tuple[list[Section], list[Section]]:
     user = [
         world_section(v),
-        town_section(v),
+        people_section(v) if config.on("social") else town_section(v),
         branches_section(v),
         memories_section(v),
         inbox_section(v),
@@ -281,6 +393,20 @@ def decision_prompt(v: View) -> tuple[list[Section], list[Section]]:
 
 def reflection_prompt(v: View, recent: list[Observation]) -> tuple[list[Section], list[Section]]:
     memories = "\n".join(f"[{m.id}] {m.text}" for m in recent)
+    if config.on("reflect"):
+        task = (
+            "Step back and reflect on what has happened so far. Write two or three insights about the ideas and the "
+            "other characters, each citing the ids of the memories it rests on. Then, for each character you've dealt "
+            "with, one line on what you make of them now. Then your agenda: the idea you want to push next, and whose "
+            "help or opposition matters for it."
+        )
+        return system_sections(v.me), [
+            world_section(v),
+            people_section(v) if config.on("social") else town_section(v),
+            branches_section(v),
+            Section("memories", f"Your most important recent memories:\n{memories}"),
+            Section("task", task),
+        ]
     task = (
         "Step back and reflect on what has happened so far. Write two or three insights about the ideas "
         "and the other characters, like who keeps proposing the same thing or whose taste clashes with yours. "
@@ -358,11 +484,19 @@ def mock_decision(v: View, rng: random.Random) -> Decision:
         "ignore": "Not yet. Let it steep.",
     }
     replies = []
+    build = config.on("build")
     for env in v.inbox:
-        answer = rng.choice(["accept", "reject"] + (["counter"] if env["type"] == MERGE_PROPOSE else []))
-        text = f"Needs more {love}." if answer != "counter" else clip(f"{(env.get('body') or {}).get('text', '')}, with {love}", 200)
-        replies.append(Reply(msg_id=env["msg_id"], answer=answer, text=text))
-    return Decision(
+        body = env.get("body") or {}
+        merge = env["type"] == MERGE_PROPOSE
+        answer = rng.choice(["accept", "reject"] + (["counter"] if merge else []))
+        base = body.get("text") or (body.get("branch") or {}).get("text") or ""
+        sparked = answer == "counter" or (build and not merge and rng.random() < 0.3)
+        idea = clip(f"{clip(base, 90)}, with {love}", 200) if sparked else None
+        if build:
+            replies.append(Reply(msg_id=env["msg_id"], answer=answer, text=f"Needs more {love}.", idea=idea))
+        else:
+            replies.append(ReplyV1(msg_id=env["msg_id"], answer=answer, text=idea or f"Needs more {love}."))
+    return decision_model()(
         replies=replies,
         importance=[Score(obs_id=o.id, importance=rng.randint(2, 9)) for o in v.to_score],
         reason=f"{me['worldview']}",
@@ -371,12 +505,19 @@ def mock_decision(v: View, rng: random.Random) -> Decision:
     )
 
 
-def mock_reflection(v: View, rng: random.Random) -> Reflection:
-    peer = rng.choice(v.peers)["name"] if v.peers else "the town"
+def mock_reflection(v: View, rng: random.Random, recent: list[Observation] | None = None):
+    other = rng.choice(v.peers) if v.peers else None
+    peer = other["name"] if other else "the town"
     champion = v.my_endorsed[-1] if v.my_endorsed else "the seed"
+    insights = [f"{peer} keeps pulling the idea away from {rng.choice(v.me['loves'])}.", "The town agrees too easily."]
+    agenda = f"Champion {champion} and win over {peer}."
+    if not config.on("reflect"):
+        return ReflectionV1(insights=insights, agenda=agenda)
+    evidence = [m.id for m in (recent or [])[:2]]
     return Reflection(
-        insights=[f"{peer} keeps pulling the idea away from {rng.choice(v.me['loves'])}.", "The town agrees too easily."],
-        agenda=f"Champion {champion} and win over {peer}.",
+        insights=[Insight(text=t, evidence=evidence) for t in insights],
+        impressions=[Impression(peer_id=other["id"], impression=f"Cares about {rng.choice(other['loves'])} more than anything.")] if other else [],
+        agenda=agenda,
     )
 
 

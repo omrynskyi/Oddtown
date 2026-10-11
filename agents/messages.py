@@ -6,11 +6,12 @@ transport.town.Town on every send, so agents only build `{"type", "body"}`.
 Bodies, by type. A `branch` is always the full branch dict from agents.schema.Branch.
 
     idea.share       {"branch", "note"}
-    idea.reaction    {"branch_id", "answer": "accept"|"reject", "text"}
+    idea.reaction    {"branch_id", "answer": "accept"|"reject", "text", "branch"?}  branch: a build on it
+    pitch.response   {"branch_id", "persuaded": bool, "text", "branch"?}
     idea.pitch       {"branch", "note"}
-    pitch.response   {"branch_id", "persuaded": bool, "text"}
     merge.propose    {"proposal_id", "branch_ids": [a, b], "text", "note"}
     merge.response   {"proposal_id", "answer": "accept"|"reject"|"counter", "text", "branch"?}
+    idea.built       {"branch", "parent_id"}  tells a branch's authors someone built on it
     replace.request  {"replaces", "replaces_name", "role": "propose"|"refine", "order": [ids], "generation", "briefing"}
     persona.draft    {"replaces", "replaces_name", "order", "step", "generation", "draft", "changes", "briefing"}
     endorse          {"branch", "reason"}
@@ -32,6 +33,7 @@ IDEA_PITCH = "idea.pitch"
 PITCH_RESPONSE = "pitch.response"
 MERGE_PROPOSE = "merge.propose"
 MERGE_RESPONSE = "merge.response"
+IDEA_BUILT = "idea.built"
 REPLACE_REQUEST = "replace.request"
 PERSONA_DRAFT = "persona.draft"
 
@@ -52,6 +54,10 @@ HUMAN_REQUEST = "human.request"
 
 # Only these wake a character up. Everything else lands in memory for its next call.
 WAKING = {IDEA_SHARE, IDEA_PITCH, MERGE_PROPOSE, REPLACE_REQUEST, PERSONA_DRAFT, WORLD_EVENT}
+
+# With the threads mechanism on, these wake their recipient too, without needing a reply,
+# so an exchange can go back and forth instead of ending at the first answer.
+ANSWERS = {IDEA_REACTION, PITCH_RESPONSE, MERGE_RESPONSE, IDEA_BUILT}
 
 # Waking messages the decision call answers, and the reply type for each.
 REPLY_TYPE = {IDEA_SHARE: IDEA_REACTION, IDEA_PITCH: PITCH_RESPONSE, MERGE_PROPOSE: MERGE_RESPONSE}

@@ -12,6 +12,7 @@ shrink a run without touching code:
     ODDTOWN_TIME_SCALE   multiplies every wait and wall-clock lifespan, e.g. 0.1 for a 10x faster town
     ODDTOWN_MAX_ACTIONS  lifespan in actions
     ODDTOWN_LIFESPAN_S   lifespan in wall-clock seconds, before scaling
+    ODDTOWN_ABLATE       comma-separated mechanisms to switch off, for experiments (see FEATURES)
 """
 
 from __future__ import annotations
@@ -106,3 +107,22 @@ def model_override() -> str | None:
 def allowed_models() -> list[str]:
     models = [m.strip() for m in os.environ.get("ODDTOWN_MODELS", DEFAULT_MODEL).split(",") if m.strip()]
     return models or [DEFAULT_MODEL]
+
+
+# Mechanisms that can be switched off one at a time with ODDTOWN_ABLATE, so research/ can measure each.
+#   social     the per-peer ledger of what passed between you, shown as the people section
+#   relevance  retrieval also scores memories by who and what the current turn is about
+#   threads    replies and credit wake the character, so an exchange can go back and forth
+#   build      a reply can take the other's idea further, making a branch that credits them
+#   credit     building on someone's branch tells its authors
+#   reflect    reflections cite their evidence and write an impression of each peer
+#   design     replacement designers see the names already used and the emptiest corner of trait space
+#   rules      the rewritten rules; off brings back the original ones
+#   think      the decision writes its reasoning before it picks an action
+FEATURES = ("social", "relevance", "threads", "build", "credit", "reflect", "design", "rules", "think")
+
+
+def on(feature: str) -> bool:
+    """True unless ODDTOWN_ABLATE lists the feature, or says "all"."""
+    off = {f.strip() for f in os.environ.get("ODDTOWN_ABLATE", "").split(",") if f.strip()}
+    return "all" not in off and feature not in off

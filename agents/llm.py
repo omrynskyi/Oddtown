@@ -128,6 +128,7 @@ async def call_json(
         # No structured outputs to lean on, so the schema goes in the prompt and counts as a section.
         user = user + [Section("format", format_instructions(out))]
         value, usage, retries, model = await _openai_call(kind, model, system, user, out)
+    _log_prompt(kind, model, system, user, value)
     return Result(
         value=value,
         kind=kind,
@@ -137,6 +138,24 @@ async def call_json(
         retries=retries,
         sections=estimate_sections(system + user, usage.prompt_tokens),
     )
+
+
+def _log_prompt(kind: str, model: str, system: list[Section], user: list[Section], value: BaseModel) -> None:
+    """With ODDTOWN_PROMPT_LOG set to a folder, append every prompt and answer there, one JSONL file per character."""
+    folder = os.environ.get("ODDTOWN_PROMPT_LOG")
+    if not folder:
+        return
+    try:
+        os.makedirs(folder, exist_ok=True)
+        record = {
+            "ts": time.time(), "agent": os.environ.get("AGENT_ID"), "run": os.environ.get("RUN_ID"), "kind": kind,
+            "model": model, "system": {s.name: s.text for s in system}, "user": {s.name: s.text for s in user},
+            "answer": value.model_dump(),
+        }
+        with open(os.path.join(folder, f"{os.environ.get('AGENT_ID', 'agent')}.jsonl"), "a") as f:
+            f.write(json.dumps(record) + "\n")
+    except Exception:
+        log.exception("couldn't log the prompt")
 
 
 # -- mock ---------------------------------------------------------------------
