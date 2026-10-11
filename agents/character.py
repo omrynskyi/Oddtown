@@ -1133,6 +1133,11 @@ async def main() -> None:
     agent_id = os.environ["AGENT_ID"]
     persona = json.loads(Path(os.environ["PERSONA_FILE"]).read_text())
     persona.setdefault("id", agent_id)
+    if os.environ.get("ODDTOWN_MODE") == "ideation_loop":
+        from agents.ideation import IdeationAgent
+
+        await IdeationAgent(persona, os.environ.get("RUN_ID", "dev"), Town.from_env(agent_id)).run()
+        return
     character = Character(persona, os.environ.get("RUN_ID", "dev"), Town.from_env(agent_id))
     await character.run()
 

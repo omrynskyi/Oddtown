@@ -13,6 +13,7 @@ Everything inside a character's head. Owned by Anthony.
 | `schema.py` | Persona and branch schemas, and the schema check |
 | `messages.py` | Message types and body shapes |
 | `config.py` | The plan's starting parameters, each overridable from the environment |
+| `ideation.py` | The agent for the ideation voting loop (`ODDTOWN_MODE=ideation_loop`): writes, twists and votes. See `PLATFORM.md` |
 | `baseline.py` | One LLM's three ideas for the same seed |
 | `../personas/starting_cast.json` | The six starting characters. `extended_cast.json` adds six more, for twelve |
 
